@@ -707,9 +707,6 @@ export function playChips(state: RunState, difficulty: Difficulty): RunState {
   if (hasCleave) {
     next = applyHitToNearestFrom(next, next.playerPosition);
     next.eventLog = addLog(next, 'Spalt-Chip: Treffer auf nächsten Gegner!');
-    if (next.enemies.length === 0) {
-      return onRoundWon(next);
-    }
   }
 
   if (hasUpgrade(next.upgradeIds, 'kill_momentum') && next.killsThisRound > state.killsThisRound) {
