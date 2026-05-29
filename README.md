@@ -20,4 +20,10 @@ npm run preview
 
 ## Assets
 
-Sprites aus dem Ordner `assets/` werden für Spieler, Gegnertypen und Bosse eingebunden. Fehlen Dateien, werden farbige Fallback-Kreise genutzt.
+Alle Bilder liegen unter `assets/`:
+
+- `assets/chip.png` — Chip-Sprite
+- `assets/characters/` — Spieler- und Gegner-Sprites
+- `assets/ruins/` — Brett, UI und Hintergründe (Ruins-Tileset)
+
+Fehlen Dateien, werden farbige Fallback-Kreise genutzt.

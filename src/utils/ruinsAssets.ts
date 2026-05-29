@@ -1,25 +1,25 @@
-import bgGame from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Background/Background_01.png';
-import bgMenu from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Background/Background_02.png';
+import bgGame from '../../assets/ruins/background-game.png';
+import bgMenu from '../../assets/ruins/background-menu.png';
 
-import boardCellGround from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Platformer/Ground_06.png';
-import decorBrick from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Platformer/Decor_Brick.png';
-import panelBox from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Platformer/Wooden_Box.png';
+import boardCellGround from '../../assets/ruins/ground-cell.png';
+import decorBrick from '../../assets/ruins/decor-brick.png';
+import panelBox from '../../assets/ruins/wooden-box.png';
 
-import centerRuins from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Environment/Decor_Ruins_01.png';
-import centerRuinsAlt from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Environment/Decor_Ruins_02.png';
-import centerStatue from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Environment/Decor_Statue.png';
-import fence from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Environment/Fence.png';
-import littleWreckage from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Environment/Little_Wreckage.png';
-import rock01 from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Environment/Rock_01.png';
-import sign from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Environment/Sign_01.png';
+import centerRuins from '../../assets/ruins/decor-ruins-01.png';
+import centerRuinsAlt from '../../assets/ruins/decor-ruins-02.png';
+import centerStatue from '../../assets/ruins/decor-statue.png';
+import fence from '../../assets/ruins/fence.png';
+import littleWreckage from '../../assets/ruins/little-wreckage.png';
+import rock01 from '../../assets/ruins/rock-01.png';
+import sign from '../../assets/ruins/sign-01.png';
 
-import coin from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Collectable Object/Coin_01.png';
-import life from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Collectable Object/Life.png';
-import chest from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Collectable Object/Chest_01_Unlocked.png';
-import key from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Collectable Object/Key_01.png';
-import star from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Collectable Object/Star.png';
-import barrel from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Platformer/Wooden_Barrel.png';
-import signEnd from '../../assets/craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Environment/Sign_03.png';
+import coin from '../../assets/ruins/coin.png';
+import life from '../../assets/ruins/life.png';
+import chest from '../../assets/ruins/chest-unlocked.png';
+import key from '../../assets/ruins/key.png';
+import star from '../../assets/ruins/star.png';
+import barrel from '../../assets/ruins/wooden-barrel.png';
+import signEnd from '../../assets/ruins/sign-03.png';
 
 export const RUINS_BACKGROUNDS = {
   game: bgGame,
