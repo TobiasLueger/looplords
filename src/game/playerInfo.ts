@@ -7,41 +7,28 @@ const DIFFICULTY_LABEL: Record<Difficulty, string> = {
   hard: 'Schwer',
 };
 
+export const PLAYER_TOOLTIP_HEADING = 'Looplord';
+
 export function getPlayerTooltipLines(
   run: RunState,
   difficulty: Difficulty,
 ): string[] {
-  const lines: string[] = [
-    'Looplord',
+  const upgradeLine =
+    run.upgradeIds.length > 0
+      ? `Upgrades: ${[...new Set(
+          run.upgradeIds
+            .map((id) => UPGRADES.find((u) => u.id === id)?.name)
+            .filter(Boolean) as string[],
+        )].join(', ')}`
+      : 'Upgrades: keine';
+
+  return [
     `Leben: ${run.lives}/${run.maxLives}`,
+    upgradeLine,
+    `Schwierigkeit: ${DIFFICULTY_LABEL[difficulty]}`,
   ];
-
-  if (run.shield > 0) {
-    lines.push(`Schild: ${run.shield}`);
-  }
-
-  lines.push(
-    'Bewegung: Summe gewählter Chips (Uhrzeigersinn)',
-    'Landen auf Gegner: Elimination',
-    'Nach Chipspiel: Hand aus Beutel auffüllen',
-    'Gespielte Chips diese Runde kommen nicht zurück',
-  );
-
-  if (run.upgradeIds.length > 0) {
-    const names = run.upgradeIds
-      .map((id) => UPGRADES.find((u) => u.id === id)?.name)
-      .filter(Boolean) as string[];
-    const unique = [...new Set(names)];
-    lines.push(`Upgrades: ${unique.join(', ')}`);
-  } else {
-    lines.push('Upgrades: keine');
-  }
-
-  lines.push(`Schwierigkeit: ${DIFFICULTY_LABEL[difficulty]}`);
-
-  return lines;
 }
 
 export function getPlayerTooltipTitle(run: RunState, difficulty: Difficulty): string {
-  return getPlayerTooltipLines(run, difficulty).join(' · ');
+  return [PLAYER_TOOLTIP_HEADING, ...getPlayerTooltipLines(run, difficulty)].join(' · ');
 }

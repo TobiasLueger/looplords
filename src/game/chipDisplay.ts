@@ -2,13 +2,11 @@ import type { Chip, ChipSpecial } from './types';
 
 const UTILITY_SPECIALS: ChipSpecial[] = [
   'teleport',
-  'shield',
   'echo',
   'scout',
-  'heal',
-  'coin',
-  'smite',
-  'rally',
+  'pierce',
+  'cleave',
+  'grapple',
   'nova',
 ];
 
@@ -20,26 +18,26 @@ export function chipLabel(chip: Chip): string {
   switch (chip.special) {
     case 'teleport':
       return 'TP';
-    case 'shield':
-      return '🛡';
     case 'overcharge':
-      return `+${chip.value + 2}`;
+      return '×2';
     case 'echo':
       return '↻';
     case 'scout':
       return '👁';
-    case 'heal':
-      return '♥';
-    case 'coin':
-      return '¤';
-    case 'smite':
-      return '⚡';
-    case 'rally':
-      return '»';
     case 'nova':
       return '✦';
     case 'retreat':
       return '←';
+    case 'dash':
+      return '←3';
+    case 'leap':
+      return '←4';
+    case 'pierce':
+      return '➤';
+    case 'cleave':
+      return '⚔';
+    case 'grapple':
+      return '↯';
     default:
       return String(chip.value);
   }
@@ -49,28 +47,28 @@ export function chipTypeLabel(chip: Chip): string {
   switch (chip.special) {
     case 'teleport':
       return 'Teleport';
-    case 'shield':
-      return 'Schild';
     case 'overcharge':
       return 'Überladung';
     case 'echo':
       return 'Echo';
     case 'scout':
       return 'Späher';
-    case 'heal':
-      return 'Heilung';
-    case 'coin':
-      return 'Gold';
-    case 'smite':
-      return 'Schlag';
-    case 'rally':
-      return 'Rally';
     case 'nova':
       return 'Nova';
     case 'retreat':
       return 'Rückzug';
+    case 'dash':
+      return 'Sturm';
+    case 'leap':
+      return 'Sprung';
+    case 'pierce':
+      return 'Durchstoß';
+    case 'cleave':
+      return 'Spalt';
+    case 'grapple':
+      return 'Enterhaken';
     default:
-      return 'Schritte';
+      return chip.value === 1 ? 'Schritt' : 'Schritte';
   }
 }
 
@@ -81,26 +79,26 @@ export function chipImageFilter(chip: Chip): string {
   switch (chip.special) {
     case 'teleport':
       return `${base} hue-rotate(265deg) saturate(1.45) brightness(1.05)`;
-    case 'shield':
-      return `${base} hue-rotate(205deg) saturate(1.35) brightness(1.08)`;
     case 'overcharge':
       return `${base} hue-rotate(28deg) saturate(1.6) brightness(1.12)`;
     case 'echo':
       return `${base} hue-rotate(175deg) saturate(1.4) brightness(1.05)`;
     case 'scout':
       return `${base} hue-rotate(195deg) saturate(1.5) brightness(1.1)`;
-    case 'heal':
-      return `${base} hue-rotate(330deg) saturate(1.5) brightness(1.08)`;
-    case 'coin':
-      return `${base} hue-rotate(42deg) saturate(1.55) brightness(1.2)`;
-    case 'smite':
-      return `${base} hue-rotate(255deg) saturate(1.5) brightness(1.1)`;
-    case 'rally':
-      return `${base} hue-rotate(75deg) saturate(1.55) brightness(1.1)`;
     case 'nova':
       return `${base} hue-rotate(295deg) saturate(1.6) brightness(1.15)`;
     case 'retreat':
       return `${base} hue-rotate(155deg) saturate(1.35) brightness(1.02)`;
+    case 'dash':
+      return `${base} hue-rotate(18deg) saturate(1.5) brightness(1.1)`;
+    case 'leap':
+      return `${base} hue-rotate(48deg) saturate(1.55) brightness(1.12)`;
+    case 'pierce':
+      return `${base} hue-rotate(340deg) saturate(1.5) brightness(1.08)`;
+    case 'cleave':
+      return `${base} hue-rotate(0deg) saturate(1.45) brightness(1.1)`;
+    case 'grapple':
+      return `${base} hue-rotate(210deg) saturate(1.4) brightness(1.08)`;
     default:
       break;
   }
@@ -119,7 +117,7 @@ export function chipImageFilter(chip: Chip): string {
 
 export function chipSelectedClass(selected: boolean): string {
   if (!selected) return '';
-  return 'ring-2 ring-loop-accent ring-offset-2 ring-offset-loop-bg rounded-xl -translate-y-0.5 shadow-[0_0_16px_rgba(201,162,39,0.35)]';
+  return 'ring-2 ring-loop-accent ring-offset-2 ring-offset-loop-bg rounded-xl shadow-[0_0_16px_rgba(201,162,39,0.35)]';
 }
 
 /** @deprecated Use ChipSprite + chipImageFilter */
@@ -131,14 +129,29 @@ export function sumSelectedChipSteps(
   hand: Chip[],
   selectedIds: string[],
 ): number {
-  return hand
-    .filter((c) => selectedIds.includes(c.id))
-    .reduce((sum, c) => {
-      if (isUtilityChip(c)) {
-        if (c.special === 'retreat') return sum - 2;
-        return sum;
-      }
-      if (c.special === 'overcharge') return sum + c.value + 2;
-      return sum + c.value;
-    }, 0);
+  const selected = hand.filter((c) => selectedIds.includes(c.id));
+  let base = 0;
+  let hasOvercharge = false;
+
+  for (const c of selected) {
+    if (c.special === 'overcharge') {
+      hasOvercharge = true;
+      continue;
+    }
+    if (isUtilityChip(c)) {
+      if (c.special === 'retreat') base -= 2;
+      continue;
+    }
+    if (c.special === 'dash') {
+      base -= 3;
+      continue;
+    }
+    if (c.special === 'leap') {
+      base -= 4;
+      continue;
+    }
+    base += c.value;
+  }
+
+  return hasOvercharge ? base * 2 : base;
 }

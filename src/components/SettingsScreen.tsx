@@ -1,14 +1,18 @@
 import type { Difficulty, GameSettings } from '../game/types';
-import { GameButton } from './ui/GameButton';
-import { RuinsPanel } from './ui/RuinsPanel';
 import { ScreenLayout } from './ui/ScreenLayout';
+import { StoneGroundSurface } from './ui/StoneGroundSurface';
+import { StoneMenuButton } from './ui/StoneMenuButton';
 import { Toggle } from './ui/Toggle';
+import { ENTITY_CELL_GROUND } from '../utils/ruinsAssets';
 
 interface SettingsScreenProps {
   settings: GameSettings;
   onUpdate: (patch: Partial<GameSettings>) => void;
   onBack: () => void;
   backLabel?: string;
+  showRunActions?: boolean;
+  onGoToTitle?: () => void;
+  onRestartRun?: () => void;
 }
 
 const difficulties: { id: Difficulty; label: string }[] = [
@@ -17,15 +21,21 @@ const difficulties: { id: Difficulty; label: string }[] = [
   { id: 'hard', label: 'Schwer' },
 ];
 
+const optionLabelShadow =
+  '0 0 6px rgba(0,0,0,0.95), 0 2px 4px rgba(0,0,0,0.85), 0 1px 0 rgba(0,0,0,1)';
+
 export function SettingsScreen({
   settings,
   onUpdate,
   onBack,
   backLabel = 'Zurück',
+  showRunActions = false,
+  onGoToTitle,
+  onRestartRun,
 }: SettingsScreenProps) {
   return (
     <ScreenLayout title="Einstellungen">
-      <RuinsPanel className="mx-auto max-w-md space-y-4">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-3">
         <Toggle
           label="Musik"
           checked={settings.music}
@@ -42,30 +52,78 @@ export function SettingsScreen({
           onChange={(animations) => onUpdate({ animations })}
         />
 
-        <div className="rounded-lg border border-loop-border bg-loop-bg/50 p-4">
-          <p className="mb-3 font-medium">Schwierigkeit</p>
-          <div className="flex gap-2">
-            {difficulties.map((d) => (
-              <button
-                key={d.id}
-                type="button"
-                onClick={() => onUpdate({ difficulty: d.id })}
-                className={`flex-1 rounded-lg border py-2 text-sm font-medium transition ${
-                  settings.difficulty === d.id
-                    ? 'border-loop-accent bg-loop-accent/20 text-loop-accentHover'
-                    : 'border-loop-border text-loop-muted hover:border-loop-muted'
-                }`}
-              >
-                {d.label}
-              </button>
-            ))}
+        <StoneGroundSurface>
+          <p
+            className="px-4 pb-2 pt-3.5 font-display text-base font-bold text-white/95 sm:px-5 sm:text-lg"
+            style={{ textShadow: optionLabelShadow }}
+          >
+            Schwierigkeit
+          </p>
+          <div className="flex gap-2 px-3 pb-3 sm:px-4 sm:pb-4">
+            {difficulties.map((d) => {
+              const selected = settings.difficulty === d.id;
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => onUpdate({ difficulty: d.id })}
+                  className={`stone-menu-btn group relative flex flex-1 items-center justify-center overflow-hidden rounded-md border-0 bg-transparent py-2.5 shadow-[0_4px_14px_rgba(0,0,0,0.55)] transition duration-200 hover:scale-[1.03] active:scale-[0.98] ${
+                    selected ? 'stone-menu-btn-primary' : ''
+                  }`}
+                >
+                  <span
+                    aria-hidden
+                    className={`stone-menu-btn__tiles absolute inset-0 transition duration-200 group-hover:brightness-110 ${
+                      selected ? 'stone-menu-btn__tiles--primary' : ''
+                    }`}
+                    style={{ backgroundImage: `url(${ENTITY_CELL_GROUND})` }}
+                  />
+                  <span
+                    className={`relative z-10 px-2 font-display text-sm font-bold sm:text-base ${
+                      selected ? 'text-loop-accentHover' : 'text-white/95'
+                    }`}
+                    style={{ textShadow: optionLabelShadow }}
+                  >
+                    {d.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-        </div>
+        </StoneGroundSurface>
 
-        <GameButton variant="secondary" onClick={onBack} className="mt-4">
-          {backLabel}
-        </GameButton>
-      </RuinsPanel>
+        {showRunActions && onGoToTitle && onRestartRun && (
+          <StoneGroundSurface>
+            <p
+              className="px-4 pb-2 pt-3.5 font-display text-base font-bold text-white/95 sm:px-5 sm:text-lg"
+              style={{ textShadow: optionLabelShadow }}
+            >
+              Aktueller Run
+            </p>
+            <div className="flex flex-col gap-2 px-3 pb-3 sm:px-4 sm:pb-4">
+              <StoneMenuButton
+                label="Run neu starten"
+                description="Neues Spiel — Fortschritt des aktuellen Runs geht verloren."
+                onClick={onRestartRun}
+                variant="primary"
+                className="w-full max-w-none"
+              />
+              <StoneMenuButton
+                label="Zum Titelmenü"
+                description="Run beenden und zurück zum Hauptmenü."
+                onClick={onGoToTitle}
+                className="w-full max-w-none"
+              />
+            </div>
+          </StoneGroundSurface>
+        )}
+
+        <StoneMenuButton
+          label={backLabel}
+          onClick={onBack}
+          className="mt-2 w-full max-w-none"
+        />
+      </div>
     </ScreenLayout>
   );
 }

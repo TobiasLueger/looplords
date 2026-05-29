@@ -1,5 +1,4 @@
 import type { Difficulty, Enemy, RunState } from '../game/types';
-import type { TooltipPlacement } from '../utils/tooltipPlacement';
 import { ENTITY_CELL_GROUND } from '../utils/ruinsAssets';
 import { EnemyTooltip } from './EnemyTooltip';
 import { PlayerTooltip } from './PlayerTooltip';
@@ -14,7 +13,6 @@ interface BoardCellProps {
   difficulty: Difficulty;
   upgradeIds: string[];
   run: RunState;
-  tooltipPlacement: TooltipPlacement;
 }
 
 export function BoardCell({
@@ -26,7 +24,6 @@ export function BoardCell({
   difficulty,
   upgradeIds,
   run,
-  tooltipPlacement,
 }: BoardCellProps) {
   const occupied = isPlayerHere || enemies.length > 0;
   const enemySize = enemies.length > 1 ? 'md' : 'lg';
@@ -61,11 +58,7 @@ export function BoardCell({
 
       <div className="relative z-10 flex flex-col items-center gap-0.5 overflow-visible p-1">
         {isPlayerHere && (
-          <PlayerTooltip
-            run={run}
-            difficulty={difficulty}
-            placement={tooltipPlacement}
-          >
+          <PlayerTooltip run={run} difficulty={difficulty}>
             <EntitySprite
               kind="player"
               size={playerSize}
@@ -80,7 +73,6 @@ export function BoardCell({
             enemy={e}
             difficulty={difficulty}
             upgradeIds={upgradeIds}
-            placement={tooltipPlacement}
           >
             <div
               className="relative overflow-visible"

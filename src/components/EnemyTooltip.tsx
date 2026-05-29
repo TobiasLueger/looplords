@@ -15,7 +15,7 @@ export function EnemyTooltip({
   enemy,
   difficulty,
   upgradeIds,
-  placement = 'top',
+  placement = 'bottom',
   children,
 }: EnemyTooltipProps) {
   const lines = getEnemyTooltipLines(

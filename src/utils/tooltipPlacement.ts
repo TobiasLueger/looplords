@@ -1,22 +1,5 @@
 export type TooltipPlacement = 'top' | 'bottom' | 'left' | 'right';
 
-/** Pick tooltip side pointing away from the board center (readable outside the ring). */
-export function getOutwardTooltipPlacement(
-  x: number,
-  y: number,
-  coordSize = 200,
-): TooltipPlacement {
-  const px = (x / coordSize) * 100;
-  const py = (y / coordSize) * 100;
-  const dx = px - 50;
-  const dy = py - 50;
-
-  if (Math.abs(dy) >= Math.abs(dx)) {
-    return dy < 0 ? 'top' : 'bottom';
-  }
-  return dx < 0 ? 'left' : 'right';
-}
-
 export function tooltipPlacementClasses(placement: TooltipPlacement): string {
   const panel =
     'pointer-events-none absolute z-[500] hidden w-44 rounded-lg border border-loop-border bg-loop-bg px-2.5 py-2 text-left shadow-xl backdrop-blur-sm sm:w-52';

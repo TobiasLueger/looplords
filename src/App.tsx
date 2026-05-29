@@ -30,6 +30,7 @@ export default function App() {
     screen,
     setScreen,
     goToTitle,
+    restartRun,
     openAchievements,
     openSettings,
     closeSettings,
@@ -50,6 +51,7 @@ export default function App() {
     handleLeaveShop,
     handleBuyInstantTicket,
     handleUseInstantTicket,
+    handleSellInstantTicket,
     clearKillFlash,
     selectedChipSum,
     hasTeleportSelected,
@@ -93,6 +95,9 @@ export default function App() {
           onUpdate={updateSettings}
           onBack={closeSettings}
           backLabel={settingsBackLabel(settingsReturnScreen)}
+          showRunActions={run != null}
+          onGoToTitle={goToTitle}
+          onRestartRun={restartRun}
         />
       );
 
@@ -141,6 +146,7 @@ export default function App() {
           onClearKillFlash={clearKillFlash}
           onOpenSettings={() => openSettings('game')}
           onUseInstantTicket={handleUseInstantTicket}
+          onSellInstantTicket={handleSellInstantTicket}
         />
       );
 

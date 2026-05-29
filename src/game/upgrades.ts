@@ -76,24 +76,24 @@ export const UPGRADES: UpgradeDefinition[] = [
     description: 'Tanks benötigen nur noch 1 Treffer.',
   },
   {
-    id: 'heal_chip',
-    name: 'Lebensstein',
-    description: 'Fügt einen Heil-Chip dem Deck hinzu.',
+    id: 'dash_chip',
+    name: 'Sturm-Relikt',
+    description: 'Fügt einen Sturm-Chip dem Deck hinzu (3 Felder zurück).',
   },
   {
-    id: 'coin_chip',
-    name: 'Münzrelikt',
-    description: 'Fügt einen Gold-Chip dem Deck hinzu.',
+    id: 'pierce_chip',
+    name: 'Durchstoß-Relikt',
+    description: 'Fügt einen Durchstoß-Chip dem Deck hinzu.',
+  },
+  {
+    id: 'grapple_chip',
+    name: 'Enterhaken-Relikt',
+    description: 'Fügt einen Enterhaken-Chip dem Deck hinzu.',
   },
   {
     id: 'nova_chip',
     name: 'Sternenstoß',
     description: 'Fügt einen Nova-Chip dem Deck hinzu.',
-  },
-  {
-    id: 'rally_chip',
-    name: 'Kriegstrommel',
-    description: 'Fügt einen Rally-Chip dem Deck hinzu.',
   },
   {
     id: 'gold_rush',

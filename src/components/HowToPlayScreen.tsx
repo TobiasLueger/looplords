@@ -48,11 +48,12 @@ export function HowToPlayScreen({ onBack }: HowToPlayScreenProps) {
           <h2 className="mb-2 font-semibold text-white">Spezial-Chips</h2>
           <ul className="list-inside list-disc space-y-1">
             <li>Teleport: halbe Runde springen</li>
-            <li>Schild: +1 Schild</li>
-            <li>Überladung: +2 Schritte</li>
+            <li>Überladung: verdoppelt Lauf-Schritte der gleichzeitig gespielten Chips</li>
+            <li>Sturm / Sprung: 3 bzw. 4 Felder gegen den Uhrzeigersinn</li>
+            <li>Enterhaken: springe zum nächsten Gegner (+ Lauf-Chips)</li>
+            <li>Durchstoß / Spalt: Treffer entlang des Wegs bzw. auf den nächsten Gegner</li>
             <li>Echo / Späher: zieht 1 bzw. 2 Chips nach dem Zug</li>
-            <li>Heil / Gold / Rally: Leben, Gold oder +1 Zug</li>
-            <li>Schlag / Nova: Treffer auf Gegner</li>
+            <li>Nova: alle Gegner -1 Treffer</li>
             <li>Rückzug: 2 Felder zurück</li>
           </ul>
         </section>

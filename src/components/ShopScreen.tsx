@@ -2,14 +2,14 @@ import type { UpgradeDefinition } from '../game/upgrades';
 import { UPGRADES } from '../game/upgrades';
 import type { RunState } from '../game/types';
 import { INSTANT_TICKET_PRICE } from '../game/constants';
-import type { InstantTicketType } from '../game/types';
 import { SHOP_REROLL_COST } from '../game/shop';
 import { RUINS_UI } from '../utils/ruinsAssets';
-import { InstantTicketsPanel } from './InstantTicketsPanel';
+import { INSTANT_TICKET_DEFS } from '../game/instantTickets';
+import { InstantTicketCard } from './InstantTicketCard';
 import { ShopChipOffer as ShopChipOfferCard } from './ShopChipOffer';
-import { StatIcon } from './StatIcon';
-import { GameButton } from './ui/GameButton';
 import { ScreenLayout } from './ui/ScreenLayout';
+import { StoneMenuButton } from './ui/StoneMenuButton';
+import { StoneStatDisplay } from './ui/StoneStatDisplay';
 
 interface ShopScreenProps {
   run: RunState;
@@ -18,7 +18,7 @@ interface ShopScreenProps {
   onSelectUpgrade: (id: string) => void;
   onLeave: () => void;
   onOpenSettings: () => void;
-  onBuyInstantTicket: (type: InstantTicketType) => void;
+  onBuyInstantTicket: (offerId: string) => void;
 }
 
 export function ShopScreen({
@@ -43,20 +43,13 @@ export function ShopScreen({
       >
         <div className="grid gap-4 sm:grid-cols-3">
           {upgradeOptions.map((opt) => (
-            <button
+            <StoneMenuButton
               key={opt.id}
-              type="button"
+              label={opt.name}
+              description={opt.description}
               onClick={() => onSelectUpgrade(opt.id)}
-              className="panel panel-ruins group text-left transition hover:border-loop-accent hover:shadow-[0_0_20px_rgba(201,162,39,0.15)]"
-            >
-              <h3 className="font-display text-lg text-loop-accent group-hover:text-loop-accentHover">
-                {opt.name}
-              </h3>
-              <p className="mt-2 text-sm text-loop-muted">{opt.description}</p>
-              <span className="mt-4 inline-block text-xs text-loop-accent">
-                Auswählen →
-              </span>
-            </button>
+              className="h-full w-full max-w-none"
+            />
           ))}
         </div>
         {run.bossUpgradePending && (
@@ -74,23 +67,17 @@ export function ShopScreen({
       subtitle={`Runde ${run.round} geschafft — gib dein Gold aus`}
       titleIcon={RUINS_UI.chest}
     >
-      <div className="mb-4 flex justify-end">
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          className="rounded-lg border border-loop-border bg-loop-panel/80 px-3 py-2 text-sm text-loop-muted transition hover:border-loop-muted hover:text-white"
-          aria-label="Einstellungen"
-        >
-          ⚙ Einstellungen
-        </button>
-      </div>
-
-      <div className="mb-4">
-        <StatIcon
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <StoneStatDisplay
           icon={RUINS_UI.coin}
           label="Gold"
           value={run.gold}
-          valueClassName="text-loop-accent"
+          variant="primary"
+        />
+        <StoneMenuButton
+          label="Einstellungen"
+          onClick={onOpenSettings}
+          className="w-auto max-w-none shrink-0 sm:max-w-none"
         />
       </div>
 
@@ -119,28 +106,45 @@ export function ShopScreen({
         <p className="text-loop-muted">Alle Chip-Angebote gekauft.</p>
       )}
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <GameButton
-          variant="secondary"
+      <div className="mt-4">
+        <StoneMenuButton
+          label={`Chips neu würfeln (${SHOP_REROLL_COST} Gold)`}
           onClick={onReroll}
           disabled={run.gold < SHOP_REROLL_COST}
-        >
-          Chips neu würfeln ({SHOP_REROLL_COST} Gold)
-        </GameButton>
-      </div>
-
-      <div className="mt-8">
-        <InstantTicketsPanel
-          tickets={run.instantTickets}
-          mode="buy"
-          gold={run.gold}
-          ticketPrice={INSTANT_TICKET_PRICE}
-          onBuy={onBuyInstantTicket}
+          className="w-auto max-w-none sm:max-w-md"
         />
       </div>
 
-      <div className="mt-10">
-        <GameButton onClick={onLeave}>Weiter — nächste Runde</GameButton>
+      <section className="mt-8">
+        <h2 className="mb-4 font-display text-lg text-loop-accent">Sofort-Tickets</h2>
+        <p className="mb-4 text-xs text-stone-300/80">
+          Je {INSTANT_TICKET_PRICE} Gold — im Spiel jederzeit nutzbar.
+        </p>
+        {run.shopTicketOffers.length === 0 ? (
+          <p className="text-sm text-loop-muted">Alle Ticket-Angebote gekauft.</p>
+        ) : (
+          <div className="ticket-shop-grid grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+            {run.shopTicketOffers.map((offer) => {
+              const def = INSTANT_TICKET_DEFS.find((d) => d.id === offer.type);
+              if (!def) return null;
+              return (
+                <InstantTicketCard
+                  key={offer.offerId}
+                  def={def}
+                  mode="buy"
+                  compact
+                  ticketPrice={INSTANT_TICKET_PRICE}
+                  canAfford={run.gold >= INSTANT_TICKET_PRICE}
+                  onBuy={() => onBuyInstantTicket(offer.offerId)}
+                />
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <div className="mt-10 flex justify-start">
+        <StoneMenuButton variant="primary" label="Weiter — nächste Runde" onClick={onLeave} />
       </div>
     </ScreenLayout>
   );

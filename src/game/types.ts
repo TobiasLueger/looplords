@@ -17,16 +17,16 @@ export type EnemyType = 'normal' | 'fast' | 'tank' | 'elite' | 'boss';
 
 export type ChipSpecial =
   | 'teleport'
-  | 'shield'
   | 'overcharge'
   | 'echo'
-  | 'heal'
-  | 'coin'
   | 'scout'
-  | 'smite'
-  | 'rally'
   | 'nova'
-  | 'retreat';
+  | 'retreat'
+  | 'dash'
+  | 'leap'
+  | 'pierce'
+  | 'cleave'
+  | 'grapple';
 
 export type InstantTicketType = 'heal' | 'gold' | 'sniper' | 'surge' | 'ward';
 
@@ -59,6 +59,11 @@ export interface ShopChipOffer {
   description: string;
   price: number;
   category: 'standard' | 'ability';
+}
+
+export interface ShopTicketOffer {
+  offerId: string;
+  type: InstantTicketType;
 }
 
 export interface GameSettings {
@@ -98,6 +103,7 @@ export interface RunState {
   turnsRemaining: number;
   discardsRemaining: number;
   killsThisRound: number;
+  goldEarnedThisRound: number;
   enemiesDefeatedTotal: number;
   firstKillBonusUsed: boolean;
   upgradeIds: string[];
@@ -111,6 +117,7 @@ export interface RunState {
   upgradeTickets: number;
   instantTickets: InstantTickets;
   shopChipOffers: ShopChipOffer[];
+  shopTicketOffers: ShopTicketOffer[];
   shopOpen: boolean;
   /** Must pick one of pendingUpgradeOptions before leaving shop (after boss rounds). */
   bossUpgradePending: boolean;

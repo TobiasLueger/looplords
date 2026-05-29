@@ -1,4 +1,4 @@
-import { INSTANT_TICKET_PRICE } from './constants';
+import { INSTANT_TICKET_PRICE, INSTANT_TICKET_SELL_PRICE } from './constants';
 import type { Difficulty, InstantTicketType, RunState } from './types';
 import { shuffle } from './deck';
 import { applySmiteToNearest, applyUpgradeToRun, startRound } from './gameLogic';
@@ -50,20 +50,19 @@ export function rerollShopOffers(state: RunState): RunState {
   });
 }
 
-export function buyInstantTicket(
-  state: RunState,
-  type: InstantTicketType,
-): RunState {
-  if (state.gold < INSTANT_TICKET_PRICE) return state;
+export function buyInstantTicket(state: RunState, offerId: string): RunState {
+  const offer = state.shopTicketOffers.find((o) => o.offerId === offerId);
+  if (!offer || state.gold < INSTANT_TICKET_PRICE) return state;
 
-  const def = INSTANT_TICKET_DEFS.find((d) => d.id === type);
+  const def = INSTANT_TICKET_DEFS.find((d) => d.id === offer.type);
   return bumpShopPurchase({
     ...state,
     gold: state.gold - INSTANT_TICKET_PRICE,
     instantTickets: {
       ...state.instantTickets,
-      [type]: state.instantTickets[type] + 1,
+      [offer.type]: state.instantTickets[offer.type] + 1,
     },
+    shopTicketOffers: state.shopTicketOffers.filter((o) => o.offerId !== offerId),
     eventLog: addLog(
       state,
       `${def?.name ?? 'Sofort-Ticket'} gekauft (−${INSTANT_TICKET_PRICE} Gold).`,
@@ -101,7 +100,11 @@ export function useInstantTicket(
       next = { ...next, eventLog: addLog(next, `${def?.name}: +1 Leben.`) };
       break;
     case 'gold':
-      next = { ...next, gold: next.gold + 5 };
+      next = {
+        ...next,
+        gold: next.gold + 5,
+        goldEarnedThisRound: next.goldEarnedThisRound + 5,
+      };
       next = { ...next, eventLog: addLog(next, `${def?.name}: +5 Gold.`) };
       break;
     case 'sniper':
@@ -122,6 +125,28 @@ export function useInstantTicket(
   }
 
   return next;
+}
+
+export function sellInstantTicket(
+  state: RunState,
+  type: InstantTicketType,
+): RunState {
+  if (state.shopOpen) return state;
+  if (state.instantTickets[type] <= 0) return state;
+
+  const def = INSTANT_TICKET_DEFS.find((d) => d.id === type);
+  return {
+    ...state,
+    gold: state.gold + INSTANT_TICKET_SELL_PRICE,
+    instantTickets: {
+      ...state.instantTickets,
+      [type]: state.instantTickets[type] - 1,
+    },
+    eventLog: addLog(
+      state,
+      `${def?.name ?? 'Sofort-Ticket'} verkauft (+${INSTANT_TICKET_SELL_PRICE} Gold).`,
+    ),
+  };
 }
 
 export function redeemUpgradeTicket(
@@ -167,6 +192,7 @@ export function leaveShop(state: RunState, difficulty: Difficulty): RunState {
     ...state,
     shopOpen: false,
     shopChipOffers: [],
+    shopTicketOffers: [],
     pendingUpgradeOptions: [],
     bossUpgradePending: false,
     upgradeTickets: 0,

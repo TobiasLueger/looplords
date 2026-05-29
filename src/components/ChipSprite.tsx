@@ -39,14 +39,22 @@ export function ChipSprite({
   const s = SIZE_CLASSES[size];
   const filter = chipImageFilter(chip);
   const label = chipLabel(chip);
+  const isInteractive = as === 'button' && onClick != null;
+
+  const chipWrapClass = [
+    `relative ${s.wrap} shrink-0 transition-transform duration-200 ease-out`,
+    selected && animations ? 'animate-chip-select' : '',
+    selected ? 'scale-105 -translate-y-0.5' : '',
+    isInteractive
+      ? 'group-hover/chip:-translate-y-1.5 group-active/chip:translate-y-0 group-hover/chip:brightness-110'
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const inner = (
     <>
-      <div
-        className={`relative ${s.wrap} shrink-0 transition-transform ${
-          selected && animations ? 'animate-chip-select' : ''
-        } ${selected ? 'scale-105' : ''}`}
-      >
+      <div className={chipWrapClass}>
         <img
           src={getChipSprite()}
           alt=""
@@ -76,16 +84,16 @@ export function ChipSprite({
     </>
   );
 
-  const baseClass = `flex flex-col items-center justify-center border-0 bg-transparent p-0 transition ${chipSelectedClass(
+  const baseClass = `flex flex-col items-center justify-center border-0 bg-transparent p-0 ${chipSelectedClass(
     selected,
   )} ${className}`;
 
-  if (as === 'button' && onClick) {
+  if (isInteractive) {
     return (
       <button
         type="button"
         onClick={onClick}
-        className={`${baseClass} cursor-pointer hover:brightness-110`}
+        className={`${baseClass} group/chip cursor-pointer`}
         aria-label={`${chipTypeLabel(chip)} ${label}`}
       >
         {inner}

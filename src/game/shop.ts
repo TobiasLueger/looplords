@@ -2,11 +2,18 @@ import {
   SHOP_ABILITY_OFFER_COUNT,
   SHOP_REROLL_COST,
   SHOP_STANDARD_OFFER_COUNT,
+  SHOP_TICKET_OFFER_COUNT,
   isBossRound,
 } from './constants';
 import { createChip, shuffle } from './deck';
-import { EMPTY_INSTANT_TICKETS } from './instantTickets';
-import type { Chip, EnemyType, InstantTickets, ShopChipOffer } from './types';
+import { EMPTY_INSTANT_TICKETS, pickRandomInstantTicketType } from './instantTickets';
+import type {
+  Chip,
+  EnemyType,
+  InstantTickets,
+  ShopChipOffer,
+  ShopTicketOffer,
+} from './types';
 import { pickRandomUpgrades } from './upgrades';
 
 export { SHOP_REROLL_COST };
@@ -64,60 +71,60 @@ const SHOP_ABILITY_CHIPS: ShopChipTemplate[] = [
     create: () => createChip(0, 'teleport'),
   },
   {
-    id: 'shield',
-    name: 'Schild-Chip',
-    description: 'Beim Spielen: +1 Schild.',
-    price: 5,
-    create: () => createChip(0, 'shield'),
-  },
-  {
     id: 'overcharge',
     name: 'Überladung',
-    description: 'Zählt als +2 Schritte (zusätzlich zum Wert).',
+    description: 'Verdoppelt die Schritte der gleichzeitig gespielten Lauf-Chips.',
     price: 6,
     create: () => createChip(1, 'overcharge'),
   },
   {
     id: 'echo',
     name: 'Echo-Chip',
-    description: 'Nach dem Zug: ziehe 1 Chip aus dem Beutel.',
+    description: 'Nach dem Zug: ziehe 1 Chip mehr aus dem Beutel.',
     price: 5,
     create: () => createChip(0, 'echo'),
   },
   {
     id: 'scout',
     name: 'Späher-Chip',
-    description: 'Nach dem Zug: ziehe 2 Chips aus dem Beutel.',
+    description: 'Nach dem Zug: ziehe 2 Chips mehr aus dem Beutel.',
     price: 7,
     create: () => createChip(0, 'scout'),
   },
   {
-    id: 'heal',
-    name: 'Heil-Chip',
-    description: 'Beim Spielen: +1 Leben (bis Maximum).',
+    id: 'dash',
+    name: 'Sturm-Chip',
+    description: 'Bewege dich 3 Felder gegen den Uhrzeigersinn.',
+    price: 5,
+    create: () => createChip(0, 'dash'),
+  },
+  {
+    id: 'leap',
+    name: 'Sprung-Chip',
+    description: 'Bewege dich 4 Felder gegen den Uhrzeigersinn.',
     price: 6,
-    create: () => createChip(0, 'heal'),
+    create: () => createChip(0, 'leap'),
   },
   {
-    id: 'coin',
-    name: 'Gold-Chip',
-    description: 'Beim Spielen: +3 Gold.',
-    price: 4,
-    create: () => createChip(0, 'coin'),
-  },
-  {
-    id: 'smite',
-    name: 'Schlag-Chip',
-    description: 'Trifft den nächsten Gegner im Uhrzeigersinn.',
-    price: 6,
-    create: () => createChip(0, 'smite'),
-  },
-  {
-    id: 'rally',
-    name: 'Rally-Chip',
-    description: 'Beim Spielen: +1 Zug in dieser Runde.',
+    id: 'pierce',
+    name: 'Durchstoß-Chip',
+    description: 'Trifft jeden Gegner auf den Feldern entlang deiner Bewegung.',
     price: 7,
-    create: () => createChip(0, 'rally'),
+    create: () => createChip(0, 'pierce'),
+  },
+  {
+    id: 'cleave',
+    name: 'Spalt-Chip',
+    description: 'Trifft nach der Landung den nächsten Gegner im Uhrzeigersinn.',
+    price: 6,
+    create: () => createChip(0, 'cleave'),
+  },
+  {
+    id: 'grapple',
+    name: 'Enterhaken-Chip',
+    description: 'Bewege dich zum nächsten Gegner im Uhrzeigersinn (+ Lauf-Chips).',
+    price: 8,
+    create: () => createChip(0, 'grapple'),
   },
   {
     id: 'nova',
@@ -190,6 +197,19 @@ export function pickRandomShopOffers(): ShopChipOffer[] {
   ];
 }
 
+export function pickRandomShopTicketOffers(
+  count: number = SHOP_TICKET_OFFER_COUNT,
+): ShopTicketOffer[] {
+  const offers: ShopTicketOffer[] = [];
+  for (let i = 0; i < count; i++) {
+    offers.push({
+      offerId: nextOfferId(),
+      type: pickRandomInstantTicketType(),
+    });
+  }
+  return offers;
+}
+
 export function createChipFromShopTemplate(templateId: string): Chip | null {
   const t = SHOP_CHIP_POOL.find((x) => x.id === templateId);
   return t ? t.create() : null;
@@ -202,6 +222,7 @@ export function openShopState(
 ): {
   shopOpen: boolean;
   shopChipOffers: ShopChipOffer[];
+  shopTicketOffers: ShopTicketOffer[];
   upgradeTickets: number;
   instantTickets: InstantTickets;
   pendingUpgradeOptions: string[];
@@ -214,6 +235,7 @@ export function openShopState(
   return {
     shopOpen: true,
     shopChipOffers: pickRandomShopOffers(),
+    shopTicketOffers: pickRandomShopTicketOffers(),
     upgradeTickets: 0,
     instantTickets,
     pendingUpgradeOptions: afterBoss

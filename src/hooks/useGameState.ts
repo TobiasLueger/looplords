@@ -22,6 +22,7 @@ import {
   leaveShop,
   redeemUpgradeTicket,
   rerollShopOffers,
+  sellInstantTicket,
   useInstantTicket,
 } from '../game/shopActions';
 import type { GameSettings } from '../game/types';
@@ -110,6 +111,14 @@ export function useGameState() {
     setNewlyUnlockedIds([]);
     setSettingsReturnScreen(null);
     setScreen('title');
+  }, []);
+
+  const restartRun = useCallback(() => {
+    setSettingsReturnScreen(null);
+    setRunEndStats(null);
+    setNewlyUnlockedIds([]);
+    setRun(createInitialRunState([]));
+    setScreen('game');
   }, []);
 
   const openAchievements = useCallback(() => {
@@ -204,18 +213,23 @@ export function useGameState() {
     );
   }, [run]);
 
-  const handleBuyInstantTicket = useCallback((type: InstantTicketType) => {
-    setRun((r) => (r ? buyInstantTicket(r, type) : r));
+  const handleBuyInstantTicket = useCallback((offerId: string) => {
+    setRun((r) => (r ? buyInstantTicket(r, offerId) : r));
   }, []);
 
   const handleUseInstantTicket = useCallback((type: InstantTicketType) => {
     setRun((r) => (r ? useInstantTicket(r, type) : r));
   }, []);
 
+  const handleSellInstantTicket = useCallback((type: InstantTicketType) => {
+    setRun((r) => (r ? sellInstantTicket(r, type) : r));
+  }, []);
+
   return {
     screen,
     setScreen,
     goToTitle,
+    restartRun,
     openAchievements,
     openSettings,
     closeSettings,
@@ -236,6 +250,7 @@ export function useGameState() {
     handleLeaveShop,
     handleBuyInstantTicket,
     handleUseInstantTicket,
+    handleSellInstantTicket,
     clearKillFlash,
     selectedChipSum,
     hasTeleportSelected,

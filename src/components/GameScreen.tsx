@@ -25,6 +25,7 @@ interface GameScreenProps {
   onClearKillFlash: () => void;
   onOpenSettings: () => void;
   onUseInstantTicket: (type: InstantTicketType) => void;
+  onSellInstantTicket: (type: InstantTicketType) => void;
 }
 
 export function GameScreen({
@@ -40,6 +41,7 @@ export function GameScreen({
   onClearKillFlash,
   onOpenSettings,
   onUseInstantTicket,
+  onSellInstantTicket,
 }: GameScreenProps) {
   const [showBag, setShowBag] = useState(false);
 
@@ -52,7 +54,7 @@ export function GameScreen({
   const canPlay =
     run.selectedChipIds.length > 0 &&
     run.turnsRemaining > 0 &&
-    (selectedChipSum > 0 || hasTeleportSelected || hasUtilityChipSelected);
+    (selectedChipSum !== 0 || hasTeleportSelected || hasUtilityChipSelected);
 
   const hearts = Array.from({ length: run.maxLives }, (_, i) => i < run.lives);
 
@@ -131,7 +133,7 @@ export function GameScreen({
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[1.2fr_minmax(280px,360px)]">
-          <div className="order-1 overflow-visible lg:order-1">
+          <div className="order-1 self-start overflow-visible lg:order-1">
             <Board
               run={run}
               animations={settings.animations}
@@ -147,15 +149,13 @@ export function GameScreen({
               animations={settings.animations}
             />
 
-            {(selectedChipSum > 0 ||
-              hasTeleportSelected ||
-              hasUtilityChipSelected) && (
-              <p className="text-center text-sm text-loop-accent">
-                {selectedChipSum > 0 && `Bewegung: ${selectedChipSum} Schritt(e)`}
-                {hasTeleportSelected && ' + Teleport'}
-                {hasUtilityChipSelected && ' + Spezial'}
-              </p>
-            )}
+            <p className="flex h-5 items-center justify-center text-center text-sm leading-5 text-loop-accent">
+              {selectedChipSum > 0 && `Bewegung: ${selectedChipSum} Schritt(e)`}
+              {selectedChipSum < 0 &&
+                `Bewegung: ${Math.abs(selectedChipSum)} Schritt(e) zurück`}
+              {hasTeleportSelected && ' + Teleport'}
+              {hasUtilityChipSelected && ' + Spezial'}
+            </p>
 
             <RuinsPanel>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -190,6 +190,7 @@ export function GameScreen({
               tickets={run.instantTickets}
               mode="use"
               onUse={onUseInstantTicket}
+              onSell={onSellInstantTicket}
             />
 
             {showBag && (

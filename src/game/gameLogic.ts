@@ -6,6 +6,7 @@ import {
   CAMPAIGN_WIN_ROUND,
   isBossRound,
   STARTING_LIVES,
+  STARTING_GOLD,
 } from './constants';
 import {
   applyOnesToTwosToDeck,
@@ -145,6 +146,7 @@ export function createInitialRunState(upgradeIds: string[] = []): RunState {
       turnsRemaining: 0,
       discardsRemaining: 0,
       killsThisRound: 0,
+      goldEarnedThisRound: 0,
       enemiesDefeatedTotal: 0,
       firstKillBonusUsed: false,
       upgradeIds,
@@ -154,10 +156,11 @@ export function createInitialRunState(upgradeIds: string[] = []): RunState {
       firstChipDoubledUsed: false,
       pendingUpgradeOptions: [],
       lastKillFlash: false,
-      gold: 0,
+      gold: STARTING_GOLD,
       upgradeTickets: 0,
       instantTickets: grantFreeInstantTicket({ ...EMPTY_INSTANT_TICKETS }),
       shopChipOffers: [],
+      shopTicketOffers: [],
       shopOpen: false,
       bossUpgradePending: false,
       endlessMode: false,
@@ -230,6 +233,7 @@ export function startRound(
     turnsRemaining: turns,
     discardsRemaining: discards,
     killsThisRound: 0,
+    goldEarnedThisRound: 0,
     firstKillBonusUsed: false,
     firstChipDoubledUsed: false,
     playerTurnCount: 0,
@@ -301,17 +305,60 @@ function clockwiseDistance(from: number, to: number, boardSize: number): number 
   return (to - from + boardSize) % boardSize;
 }
 
-export function applySmiteToNearest(state: RunState): RunState {
-  if (state.enemies.length === 0) return state;
+function getNearestEnemyClockwise(
+  fromPosition: number,
+  enemies: Enemy[],
+  boardSize: number,
+): Enemy | null {
+  if (enemies.length === 0) return null;
 
-  const sorted = [...state.enemies].sort(
+  const sorted = [...enemies].sort(
     (a, b) =>
-      clockwiseDistance(state.playerPosition, a.position, state.boardSize) -
-      clockwiseDistance(state.playerPosition, b.position, state.boardSize),
+      clockwiseDistance(fromPosition, a.position, boardSize) -
+      clockwiseDistance(fromPosition, b.position, boardSize),
   );
-  const target = sorted.find(
-    (e) => clockwiseDistance(state.playerPosition, e.position, state.boardSize) > 0,
-  ) ?? sorted[0];
+
+  return (
+    sorted.find(
+      (e) => clockwiseDistance(fromPosition, e.position, boardSize) > 0,
+    ) ?? sorted[0]
+  );
+}
+
+function cellsAlongPath(from: number, steps: number, boardSize: number): number[] {
+  if (steps === 0) return [];
+
+  const cells: number[] = [];
+  const dir = steps > 0 ? 1 : -1;
+  for (let i = 1; i <= Math.abs(steps); i++) {
+    cells.push(moveClockwise(from, dir * i, boardSize));
+  }
+  return cells;
+}
+
+function damageEnemiesOnCells(state: RunState, cells: number[]): RunState {
+  let next = { ...state };
+
+  for (const pos of [...new Set(cells)]) {
+    const { enemies, killed } = removeEnemyAt(next.enemies, pos, next.upgradeIds);
+    next.enemies = enemies;
+    next = processKill(next, killed);
+    if (next.enemies.length === 0) break;
+  }
+
+  return next;
+}
+
+function applyHitToNearestFrom(state: RunState, fromPosition: number): RunState {
+  const target = getNearestEnemyClockwise(
+    fromPosition,
+    state.enemies,
+    state.boardSize,
+  );
+  if (!target) return state;
+
+  const dist = clockwiseDistance(fromPosition, target.position, state.boardSize);
+  if (dist <= 0) return state;
 
   const { enemies, killed } = removeEnemyAt(
     state.enemies,
@@ -320,6 +367,10 @@ export function applySmiteToNearest(state: RunState): RunState {
   );
   let next = { ...state, enemies };
   return processKill(next, killed);
+}
+
+export function applySmiteToNearest(state: RunState): RunState {
+  return applyHitToNearestFrom(state, state.playerPosition);
 }
 
 export function damageAllEnemiesOnce(state: RunState): RunState {
@@ -369,6 +420,7 @@ function processKill(
   }
   if (goldGain > 0) {
     next.gold += goldGain;
+    next.goldEarnedThisRound += goldGain;
     next.eventLog = addLog(next, `+${goldGain} Gold`);
   }
 
@@ -428,24 +480,21 @@ function calculateChipMovement(
   steps: number;
   hasTeleport: boolean;
   extraDraw: number;
-  shieldGained: number;
-  goldGained: number;
-  healAmount: number;
-  bonusTurns: number;
-  hasSmite: boolean;
   hasNova: boolean;
+  hasPierce: boolean;
+  hasCleave: boolean;
+  hasGrapple: boolean;
   played: Chip[];
 } {
   const selected = hand.filter((c) => selectedIds.includes(c.id));
   let steps = 0;
   let hasTeleport = false;
   let extraDraw = 0;
-  let shieldGained = 0;
-  let goldGained = 0;
-  let healAmount = 0;
-  let bonusTurns = 0;
-  let hasSmite = false;
   let hasNova = false;
+  let hasPierce = false;
+  let hasCleave = false;
+  let hasGrapple = false;
+  let hasOvercharge = false;
   let firstApplied = firstChipDoubledUsed;
 
   for (const chip of selected) {
@@ -453,40 +502,40 @@ function calculateChipMovement(
       case 'teleport':
         hasTeleport = true;
         continue;
-      case 'shield':
-        shieldGained += 1;
-        continue;
       case 'echo':
         extraDraw = Math.max(extraDraw, 1);
         continue;
       case 'scout':
         extraDraw = Math.max(extraDraw, 2);
         continue;
-      case 'heal':
-        healAmount += 1;
-        continue;
-      case 'coin':
-        goldGained += 3;
-        continue;
-      case 'rally':
-        bonusTurns += 1;
-        continue;
-      case 'smite':
-        hasSmite = true;
-        continue;
       case 'nova':
         hasNova = true;
         continue;
+      case 'pierce':
+        hasPierce = true;
+        continue;
+      case 'cleave':
+        hasCleave = true;
+        continue;
+      case 'grapple':
+        hasGrapple = true;
+        continue;
       case 'retreat':
         steps -= 2;
+        continue;
+      case 'overcharge':
+        hasOvercharge = true;
+        continue;
+      case 'dash':
+        steps -= 3;
+        continue;
+      case 'leap':
+        steps -= 4;
         continue;
       default:
         break;
     }
     let val = chip.value;
-    if (chip.special === 'overcharge') {
-      val += 2;
-    }
     if (
       !firstApplied &&
       hasUpgrade(upgradeIds, 'double_first_chip')
@@ -497,16 +546,18 @@ function calculateChipMovement(
     steps += val;
   }
 
+  if (hasOvercharge) {
+    steps *= 2;
+  }
+
   return {
     steps,
     hasTeleport,
     extraDraw,
-    shieldGained,
-    goldGained,
-    healAmount,
-    bonusTurns,
-    hasSmite,
     hasNova,
+    hasPierce,
+    hasCleave,
+    hasGrapple,
     played: selected,
   };
 }
@@ -527,12 +578,10 @@ export function playChips(state: RunState, difficulty: Difficulty): RunState {
     steps,
     hasTeleport,
     extraDraw,
-    shieldGained,
-    goldGained,
-    healAmount,
-    bonusTurns,
-    hasSmite,
     hasNova,
+    hasPierce,
+    hasCleave,
+    hasGrapple,
     played,
   } = calculateChipMovement(
     state.hand,
@@ -545,13 +594,15 @@ export function playChips(state: RunState, difficulty: Difficulty): RunState {
     steps !== 0 ||
     hasTeleport ||
     extraDraw > 0 ||
-    shieldGained > 0 ||
-    goldGained > 0 ||
-    healAmount > 0 ||
-    bonusTurns > 0 ||
-    hasSmite ||
-    hasNova;
+    hasNova ||
+    hasGrapple ||
+    (hasPierce && (steps !== 0 || hasGrapple || hasTeleport)) ||
+    (hasCleave && (steps !== 0 || hasGrapple || hasTeleport));
   if (!canPlay) return state;
+
+  if (hasGrapple && state.enemies.length === 0) {
+    return state;
+  }
 
   let next: RunState = {
     ...state,
@@ -564,46 +615,12 @@ export function playChips(state: RunState, difficulty: Difficulty): RunState {
     lastKillFlash: false,
   };
 
-  if (shieldGained > 0) {
-    next.shield += shieldGained;
-    next.eventLog = addLog(
-      next,
-      shieldGained === 1 ? 'Schild-Chip: +1 Schild.' : `+${shieldGained} Schild.`,
-    );
-  }
-
-  if (healAmount > 0) {
-    const before = next.lives;
-    next.lives = Math.min(next.lives + healAmount, next.maxLives);
-    if (next.lives > before) {
-      next.eventLog = addLog(
-        next,
-        healAmount === 1 ? 'Heil-Chip: +1 Leben.' : `Heil-Chip: +${next.lives - before} Leben.`,
-      );
-    }
-  }
-
-  if (goldGained > 0) {
-    next.gold += goldGained;
-    next.eventLog = addLog(next, `Gold-Chip: +${goldGained} Gold.`);
-  }
-
-  if (bonusTurns > 0) {
-    next.turnsRemaining += bonusTurns;
-    next.eventLog = addLog(
-      next,
-      bonusTurns === 1 ? 'Rally-Chip: +1 Zug.' : `Rally-Chip: +${bonusTurns} Züge.`,
-    );
-  }
-
-  if (hasSmite) {
-    next = applySmiteToNearest(next);
-    next.eventLog = addLog(next, 'Schlag-Chip: Treffer auf nächsten Gegner!');
-  }
-
   if (hasNova) {
     next = damageAllEnemiesOnce(next);
     next.eventLog = addLog(next, 'Nova-Chip: alle Gegner -1 Treffer.');
+    if (next.enemies.length === 0) {
+      return onRoundWon(next);
+    }
   }
 
   if (hasTeleport) {
@@ -616,21 +633,60 @@ export function playChips(state: RunState, difficulty: Difficulty): RunState {
     next.eventLog = addLog(next, `Teleport! +${teleportSteps} Felder.`);
   }
 
-  if (steps !== 0) {
+  let moveSteps = steps;
+  if (hasGrapple && next.enemies.length > 0) {
+    const target = getNearestEnemyClockwise(
+      next.playerPosition,
+      next.enemies,
+      next.boardSize,
+    );
+    if (target) {
+      moveSteps =
+        clockwiseDistance(next.playerPosition, target.position, next.boardSize) +
+        steps;
+    }
+  }
+
+  if (moveSteps !== 0) {
+    if (hasPierce) {
+      const pathCells = cellsAlongPath(
+        next.playerPosition,
+        moveSteps,
+        next.boardSize,
+      );
+      next = damageEnemiesOnCells(next, pathCells);
+      next.eventLog = addLog(next, 'Durchstoß-Chip: Treffer entlang des Wegs!');
+      if (next.enemies.length === 0) {
+        return onRoundWon(next);
+      }
+    }
+
     next.playerPosition = moveClockwise(
       next.playerPosition,
-      steps,
+      moveSteps,
       next.boardSize,
     );
     next.eventLog = addLog(
       next,
-      steps > 0
-        ? `Du bewegst dich ${steps} Feld(er) vor.`
-        : `Rückzug-Chip: ${Math.abs(steps)} Feld(er) zurück.`,
+      hasGrapple
+        ? `Enterhaken! ${moveSteps} Feld(er) zum Gegner.`
+        : moveSteps > 0
+          ? `Du bewegst dich ${moveSteps} Feld(er) vor.`
+          : `Rückzug-Chip: ${Math.abs(moveSteps)} Feld(er) zurück.`,
     );
   }
 
-  next = resolveLanding(next, next.playerPosition);
+  if (moveSteps !== 0 || hasTeleport) {
+    next = resolveLanding(next, next.playerPosition);
+  }
+
+  if (hasCleave) {
+    next = applyHitToNearestFrom(next, next.playerPosition);
+    next.eventLog = addLog(next, 'Spalt-Chip: Treffer auf nächsten Gegner!');
+    if (next.enemies.length === 0) {
+      return onRoundWon(next);
+    }
+  }
 
   if (hasUpgrade(next.upgradeIds, 'kill_momentum') && next.killsThisRound > state.killsThisRound) {
     next.playerPosition = moveClockwise(
@@ -865,20 +921,20 @@ export function applyUpgradeToRun(state: RunState, upgradeId: string): RunState 
     next.deck = shuffle([...next.deck, createChip(0, 'teleport')]);
   }
 
-  if (upgradeId === 'heal_chip') {
-    next.deck = shuffle([...next.deck, createChip(0, 'heal')]);
+  if (upgradeId === 'dash_chip') {
+    next.deck = shuffle([...next.deck, createChip(0, 'dash')]);
   }
 
-  if (upgradeId === 'coin_chip') {
-    next.deck = shuffle([...next.deck, createChip(0, 'coin')]);
+  if (upgradeId === 'pierce_chip') {
+    next.deck = shuffle([...next.deck, createChip(0, 'pierce')]);
+  }
+
+  if (upgradeId === 'grapple_chip') {
+    next.deck = shuffle([...next.deck, createChip(0, 'grapple')]);
   }
 
   if (upgradeId === 'nova_chip') {
     next.deck = shuffle([...next.deck, createChip(0, 'nova')]);
-  }
-
-  if (upgradeId === 'rally_chip') {
-    next.deck = shuffle([...next.deck, createChip(0, 'rally')]);
   }
 
   if (upgradeId === 'gold_rush') {

@@ -1,6 +1,7 @@
 import type { EnemyType } from '../game/types';
 
 import chipImg from '../../assets/chip.png';
+import ticketImg from '../../assets/ticket.png';
 import playerImg from '../../assets/characters/player-valkyrie-idle.png';
 import enemyNormalImg from '../../assets/characters/enemy-goblin-idle.png';
 import enemyFastImg from '../../assets/characters/enemy-assassin-idle.png';
@@ -10,6 +11,7 @@ import enemyBossImg from '../../assets/characters/enemy-boss-caveman-idle.png';
 
 export const SPRITES = {
   chip: chipImg,
+  ticket: ticketImg,
   player: playerImg,
   enemyNormal: enemyNormalImg,
   enemyFast: enemyFastImg,
@@ -39,6 +41,10 @@ export function getPlayerSprite(): string | null {
 
 export function getChipSprite(): string {
   return SPRITES.chip;
+}
+
+export function getTicketSprite(): string {
+  return SPRITES.ticket;
 }
 
 export const ENEMY_FALLBACK_COLORS: Record<EnemyType, string> = {
