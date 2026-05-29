@@ -167,7 +167,6 @@ export function GameScreen({
             <Board
               run={run}
               animations={settings.animations}
-              difficulty={settings.difficulty}
               playerMoveRequest={playerMoveRequest}
               onPlayerMoveComplete={onPlayerMoveComplete}
               onKillStrike={onKillStrike}

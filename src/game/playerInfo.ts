@@ -1,18 +1,9 @@
-import type { Difficulty, RunState } from './types';
+import type { RunState } from './types';
 import { UPGRADES } from './upgrades';
-
-const DIFFICULTY_LABEL: Record<Difficulty, string> = {
-  easy: 'Leicht',
-  normal: 'Normal',
-  hard: 'Schwer',
-};
 
 export const PLAYER_TOOLTIP_HEADING = 'Looplord';
 
-export function getPlayerTooltipLines(
-  run: RunState,
-  difficulty: Difficulty,
-): string[] {
+export function getPlayerTooltipLines(run: RunState): string[] {
   const upgradeLine =
     run.upgradeIds.length > 0
       ? `Upgrades: ${[...new Set(
@@ -22,13 +13,9 @@ export function getPlayerTooltipLines(
         )].join(', ')}`
       : 'Upgrades: keine';
 
-  return [
-    `Leben: ${run.lives}/${run.maxLives}`,
-    upgradeLine,
-    `Schwierigkeit: ${DIFFICULTY_LABEL[difficulty]}`,
-  ];
+  return [`Leben: ${run.lives}/${run.maxLives}`, upgradeLine];
 }
 
-export function getPlayerTooltipTitle(run: RunState, difficulty: Difficulty): string {
-  return [PLAYER_TOOLTIP_HEADING, ...getPlayerTooltipLines(run, difficulty)].join(' · ');
+export function getPlayerTooltipTitle(run: RunState): string {
+  return [PLAYER_TOOLTIP_HEADING, ...getPlayerTooltipLines(run)].join(' · ');
 }

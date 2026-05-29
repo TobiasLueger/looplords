@@ -1,4 +1,4 @@
-import type { GameSettings, RunEndStats, RunState } from './types';
+import type { RunEndStats, RunState } from './types';
 import { CAMPAIGN_WIN_ROUND } from './constants';
 import { getUnlockedIds, unlockAchievementIds } from './achievementStorage';
 
@@ -60,11 +60,6 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     description: '100 Gold in einem Run angesammelt.',
   },
   {
-    id: 'hard_campaign',
-    name: 'Eiserner Loop',
-    description: 'Die Kampagne auf „Schwer“ abgeschlossen.',
-  },
-  {
     id: 'first_instant_ticket',
     name: 'Ticket ziehen',
     description: 'Ein Sofort-Ticket eingesetzt.',
@@ -93,11 +88,7 @@ export function getAchievementById(id: string): AchievementDefinition | undefine
   return ACHIEVEMENTS.find((a) => a.id === id);
 }
 
-function eligibleIds(
-  run: RunState,
-  settings: GameSettings,
-  endStats: RunEndStats,
-): string[] {
+function eligibleIds(run: RunState, endStats: RunEndStats): string[] {
   const ids: string[] = [];
   const m = run.runMilestones;
 
@@ -131,12 +122,6 @@ function eligibleIds(
   if (run.gold >= 100) {
     ids.push('gold_100');
   }
-  if (
-    m.campaignCompleted &&
-    settings.difficulty === 'hard'
-  ) {
-    ids.push('hard_campaign');
-  }
   if (m.usedInstantTicket) {
     ids.push('first_instant_ticket');
   }
@@ -152,11 +137,10 @@ function eligibleIds(
 
 export function evaluateNewAchievements(
   run: RunState,
-  settings: GameSettings,
   endStats: RunEndStats,
 ): string[] {
   const already = new Set(getUnlockedIds());
-  const eligible = eligibleIds(run, settings, endStats);
+  const eligible = eligibleIds(run, endStats);
   const newly = eligible.filter((id) => !already.has(id));
 
   if (newly.length === 0) return [];

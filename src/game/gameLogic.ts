@@ -17,7 +17,8 @@ import {
   resetChipIdCounter,
   shuffle,
 } from './deck';
-import type { Chip, Difficulty, Enemy, EnemyType, RunState } from './types';
+import { getEnemyDamage } from './enemyInfo';
+import type { Chip, Enemy, EnemyType, RunState } from './types';
 import { EMPTY_RUN_MILESTONES } from './types';
 import {
   EMPTY_INSTANT_TICKETS,
@@ -118,13 +119,6 @@ function getEnemySpeed(type: EnemyType): number {
   }
 }
 
-function getEnemyDamage(type: EnemyType, difficulty: Difficulty): number {
-  const base = type === 'boss' ? 2 : type === 'elite' ? 2 : 1;
-  const mult =
-    difficulty === 'easy' ? 0.75 : difficulty === 'hard' ? 1.35 : 1;
-  return Math.max(1, Math.round(base * mult));
-}
-
 export function createInitialRunState(upgradeIds: string[] = []): RunState {
   resetChipIdCounter();
   resetEnemyIdCounter();
@@ -170,7 +164,6 @@ export function createInitialRunState(upgradeIds: string[] = []): RunState {
       playerMoveSteps: [],
       playerMoveToken: 0,
     },
-    'normal',
     1,
   );
 }
@@ -187,11 +180,10 @@ export function isCampaignCompletePending(state: RunState): boolean {
 
 export function startRound(
   prev: RunState,
-  difficulty: Difficulty,
   round: number,
 ): RunState {
   const boardSize = getBoardSize(round);
-  const enemyCount = getEnemyCount(round, difficulty);
+  const enemyCount = getEnemyCount(round);
   let deck = prepareRoundDeck(prev.upgradeIds, {
     deck: prev.deck,
     discard: prev.discard,
@@ -210,7 +202,7 @@ export function startRound(
   const drawn = drawFromDeckOnly(deck, handSize);
   deck = drawn.deck;
 
-  const turns = getTurnsForRound(round, difficulty, getBonusTurns(prev.upgradeIds));
+  const turns = getTurnsForRound(round, getBonusTurns(prev.upgradeIds));
   const discards = getDiscardsForRound(getBonusDiscards(prev.upgradeIds));
 
   let shield = prev.shield;
@@ -596,7 +588,7 @@ export function toggleChipSelection(state: RunState, chipId: string): RunState {
   return { ...state, selectedChipIds: selected };
 }
 
-export function playChips(state: RunState, difficulty: Difficulty): RunState {
+export function playChips(state: RunState): RunState {
   if (state.selectedChipIds.length === 0) return state;
   if (state.turnsRemaining <= 0) return state;
 
@@ -732,7 +724,7 @@ export function playChips(state: RunState, difficulty: Difficulty): RunState {
     return onRoundWon(next);
   }
 
-  next = runEnemyPhase(next, difficulty);
+  next = runEnemyPhase(next);
 
   if (next.lives <= 0) return next;
   if (next.enemies.length === 0) return onRoundWon(next);
@@ -777,7 +769,7 @@ export function playChips(state: RunState, difficulty: Difficulty): RunState {
   return next;
 }
 
-export function endTurn(state: RunState, difficulty: Difficulty): RunState {
+export function endTurn(state: RunState): RunState {
   if (state.turnsRemaining <= 0) return state;
 
   let next: RunState = {
@@ -794,7 +786,7 @@ export function endTurn(state: RunState, difficulty: Difficulty): RunState {
     return onRoundWon(next);
   }
 
-  next = runEnemyPhase(next, difficulty);
+  next = runEnemyPhase(next);
 
   if (next.turnsRemaining <= 0 && next.enemies.length > 0) {
     next.eventLog = addLog(next, 'Keine Züge mehr — die Schleife bricht!');
@@ -803,7 +795,7 @@ export function endTurn(state: RunState, difficulty: Difficulty): RunState {
   return next;
 }
 
-function runEnemyPhase(state: RunState, difficulty: Difficulty): RunState {
+function runEnemyPhase(state: RunState): RunState {
   if (
     hasUpgrade(state.upgradeIds, 'slow_enemies') &&
     state.playerTurnCount % 2 === 0
@@ -826,7 +818,7 @@ function runEnemyPhase(state: RunState, difficulty: Difficulty): RunState {
     );
 
     if (newPos === next.playerPosition) {
-      const dmg = getEnemyDamage(enemy.type, difficulty);
+      const dmg = getEnemyDamage(enemy.type);
       next = damagePlayer(next, dmg);
       if (enemy.type === 'boss') {
         next = damagePlayer(next, 1);

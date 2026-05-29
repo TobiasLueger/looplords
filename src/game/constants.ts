@@ -1,5 +1,3 @@
-import type { Difficulty } from './types';
-
 /** @deprecated Use CAMPAIGN_WIN_ROUND — kept for imports during migration */
 export const MAX_ROUND = 25;
 export const CAMPAIGN_WIN_ROUND = 25;
@@ -23,29 +21,18 @@ export const START_DECK_COMPOSITION: Record<number, number> = {
   4: 1,
 };
 
-export const DIFFICULTY_MODIFIERS: Record<
-  Difficulty,
-  { enemyMult: number; turnMult: number; damageMult: number }
-> = {
-  easy: { enemyMult: 0.85, turnMult: 1.2, damageMult: 0.75 },
-  normal: { enemyMult: 1, turnMult: 1, damageMult: 1 },
-  hard: { enemyMult: 1.25, turnMult: 0.85, damageMult: 1.35 },
-};
-
 export function getBoardSize(round: number): number {
   return Math.min(MAX_BOARD_SIZE, START_BOARD_SIZE + (round - 1) * BOARD_GROWTH_PER_ROUND);
 }
 
-export function getEnemyCount(round: number, difficulty: Difficulty): number {
+export function getEnemyCount(round: number): number {
   const base = ROUND_1_ENEMIES + Math.floor((round - 1) * 0.75);
-  const mod = DIFFICULTY_MODIFIERS[difficulty].enemyMult;
-  return Math.max(1, Math.round(base * mod));
+  return Math.max(1, Math.round(base));
 }
 
-export function getTurnsForRound(round: number, difficulty: Difficulty, bonusTurns: number): number {
+export function getTurnsForRound(round: number, bonusTurns: number): number {
   const base = ROUND_1_TURNS + Math.floor((round - 1) / 4);
-  const mod = DIFFICULTY_MODIFIERS[difficulty].turnMult;
-  return Math.max(3, Math.round(base * mod) + bonusTurns);
+  return Math.max(3, Math.round(base) + bonusTurns);
 }
 
 export function getDiscardsForRound(bonusDiscards: number): number {

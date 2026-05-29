@@ -1,5 +1,5 @@
 import { INSTANT_TICKET_PRICE, INSTANT_TICKET_SELL_PRICE } from './constants';
-import type { Difficulty, InstantTicketType, RunState } from './types';
+import type { InstantTicketType, RunState } from './types';
 import { shuffle } from './deck';
 import { applySmiteToNearest, applyUpgradeToRun, startRound, triggerRoundWinIfClear } from './gameLogic';
 import { INSTANT_TICKET_DEFS } from './instantTickets';
@@ -178,7 +178,7 @@ export function cancelUpgradePicker(state: RunState): RunState {
   };
 }
 
-export function leaveShop(state: RunState, difficulty: Difficulty): RunState {
+export function leaveShop(state: RunState): RunState {
   if (!state.shopOpen) return state;
   if (state.bossUpgradePending && state.pendingUpgradeOptions.length > 0) {
     return {
@@ -201,5 +201,5 @@ export function leaveShop(state: RunState, difficulty: Difficulty): RunState {
     bossUpgradePending: false,
     upgradeTickets: 0,
   };
-  return startRound(cleared, difficulty, nextRound);
+  return startRound(cleared, nextRound);
 }

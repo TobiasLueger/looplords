@@ -1,11 +1,10 @@
-import type { Difficulty, Enemy } from '../game/types';
+import type { Enemy } from '../game/types';
 import { getEnemyTooltipLines, getEnemyTooltipTitle } from '../game/enemyInfo';
 import type { TooltipPlacement } from '../utils/tooltipPlacement';
 import { tooltipPlacementClasses } from '../utils/tooltipPlacement';
 
 interface EnemyTooltipProps {
   enemy: Enemy;
-  difficulty: Difficulty;
   upgradeIds: string[];
   placement?: TooltipPlacement;
   children: React.ReactNode;
@@ -13,21 +12,18 @@ interface EnemyTooltipProps {
 
 export function EnemyTooltip({
   enemy,
-  difficulty,
   upgradeIds,
   placement = 'bottom',
   children,
 }: EnemyTooltipProps) {
   const lines = getEnemyTooltipLines(
     enemy.type,
-    difficulty,
     enemy.hp,
     enemy.maxHp,
     upgradeIds,
   );
   const title = getEnemyTooltipTitle(
     enemy.type,
-    difficulty,
     enemy.hp,
     enemy.maxHp,
     upgradeIds,

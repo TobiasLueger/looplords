@@ -1,23 +1,21 @@
-import type { Difficulty, RunState } from '../game/types';
+import type { RunState } from '../game/types';
 import { getPlayerTooltipLines, getPlayerTooltipTitle, PLAYER_TOOLTIP_HEADING } from '../game/playerInfo';
 import type { TooltipPlacement } from '../utils/tooltipPlacement';
 import { tooltipPlacementClasses } from '../utils/tooltipPlacement';
 
 interface PlayerTooltipProps {
   run: RunState;
-  difficulty: Difficulty;
   placement?: TooltipPlacement;
   children: React.ReactNode;
 }
 
 export function PlayerTooltip({
   run,
-  difficulty,
   placement = 'bottom',
   children,
 }: PlayerTooltipProps) {
-  const lines = getPlayerTooltipLines(run, difficulty);
-  const title = getPlayerTooltipTitle(run, difficulty);
+  const lines = getPlayerTooltipLines(run);
+  const title = getPlayerTooltipTitle(run);
 
   return (
     <div className="group/player relative z-0 hover:z-[60]" title={title}>

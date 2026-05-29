@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { Difficulty, RunState } from '../game/types';
+import type { RunState } from '../game/types';
 import { getEntitiesOnCell } from '../game/gameLogic';
 import {
   usePlayerHopAnimation,
@@ -23,7 +23,6 @@ const BOARD_COORD_SIZE = 200;
 interface BoardProps {
   run: RunState;
   animations: boolean;
-  difficulty: Difficulty;
   playerMoveRequest: PlayerMoveRequest | null;
   onPlayerMoveComplete: () => void;
   onKillStrike?: () => void;
@@ -41,7 +40,6 @@ interface BoardProps {
 export function Board({
   run,
   animations,
-  difficulty,
   playerMoveRequest,
   onPlayerMoveComplete,
   onKillStrike,
@@ -211,7 +209,6 @@ export function Board({
                 killFlash={run.lastKillFlash && isPlayerHere}
                 showSplatter={splatterSet.has(index)}
                 enemyDying={enemyDying}
-                difficulty={difficulty}
                 upgradeIds={run.upgradeIds}
                 run={run}
               />

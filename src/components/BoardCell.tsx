@@ -1,4 +1,4 @@
-import type { Difficulty, Enemy, RunState } from '../game/types';
+import type { Enemy, RunState } from '../game/types';
 import { ENTITY_CELL_GROUND } from '../utils/ruinsAssets';
 import { EnemyTooltip } from './EnemyTooltip';
 import { KillSplatter } from './KillSplatter';
@@ -13,7 +13,6 @@ interface BoardCellProps {
   killFlash: boolean;
   showSplatter: boolean;
   enemyDying?: boolean;
-  difficulty: Difficulty;
   upgradeIds: string[];
   run: RunState;
 }
@@ -26,7 +25,6 @@ export function BoardCell({
   killFlash,
   showSplatter,
   enemyDying = false,
-  difficulty,
   upgradeIds,
   run,
 }: BoardCellProps) {
@@ -65,7 +63,7 @@ export function BoardCell({
 
       <div className="relative z-10 flex flex-col items-center gap-0.5 overflow-visible p-1">
         {isPlayerHere && (
-          <PlayerTooltip run={run} difficulty={difficulty}>
+          <PlayerTooltip run={run}>
             <EntitySprite
               kind="player"
               size={playerSize}
@@ -78,7 +76,6 @@ export function BoardCell({
           <EnemyTooltip
             key={e.id}
             enemy={e}
-            difficulty={difficulty}
             upgradeIds={upgradeIds}
           >
             <div

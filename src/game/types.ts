@@ -11,8 +11,6 @@ export type Screen =
   | 'runEnd'
   | 'achievements';
 
-export type Difficulty = 'easy' | 'normal' | 'hard';
-
 export type EnemyType = 'normal' | 'fast' | 'tank' | 'elite' | 'boss';
 
 export type ChipSpecial =
@@ -71,7 +69,6 @@ export interface GameSettings {
   musicVolume: number;
   sound: boolean;
   animations: boolean;
-  difficulty: Difficulty;
 }
 
 export interface RunMilestones {

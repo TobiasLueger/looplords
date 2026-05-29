@@ -40,7 +40,6 @@ const defaultSettings: GameSettings = {
   musicVolume: 70,
   sound: true,
   animations: true,
-  difficulty: 'normal',
 };
 
 function loadSettings(): GameSettings {
@@ -114,7 +113,7 @@ export function useGameState() {
   const finishRun = useCallback(
     (currentRun: RunState, won: boolean, reason?: string) => {
       const endStats = buildRunEndStats(currentRun, won, reason);
-      const newly = evaluateNewAchievements(currentRun, settings, endStats);
+      const newly = evaluateNewAchievements(currentRun, endStats);
       setRunEndStats(endStats);
       setNewlyUnlockedIds(newly);
       setRun(null);
@@ -317,7 +316,7 @@ export function useGameState() {
     if (!run || pendingRunRef.current || pendingSniperRunRef.current) return;
 
     const prevKills = run.killsThisRound;
-    const next = playChips(run, settings.difficulty);
+    const next = playChips(run);
     const segments = next.playerMoveSteps ?? [];
     const cleaveThrow = getCleaveThrowTarget(
       run,
@@ -394,12 +393,12 @@ export function useGameState() {
       }
     }
     setRun({ ...next, playerMoveSteps: [] });
-  }, [run, settings.animations, settings.difficulty, settings.sound]);
+  }, [run, settings.animations, settings.sound]);
 
   const handleEndTurn = useCallback(() => {
     if (pendingRunRef.current || pendingSniperRunRef.current) return;
-    setRun((r) => (r ? endTurn(r, settings.difficulty) : r));
-  }, [settings.difficulty]);
+    setRun((r) => (r ? endTurn(r) : r));
+  }, []);
 
   const handleDiscard = useCallback(() => {
     if (pendingRunRef.current || pendingSniperRunRef.current) return;
@@ -433,9 +432,9 @@ export function useGameState() {
   }, []);
 
   const handleLeaveShop = useCallback(() => {
-    setRun((r) => (r ? leaveShop(r, settings.difficulty) : r));
+    setRun((r) => (r ? leaveShop(r) : r));
     setScreen('game');
-  }, [settings.difficulty]);
+  }, []);
 
   const clearKillFlash = useCallback(() => {
     setRun((r) => (r ? { ...r, lastKillFlash: false } : r));

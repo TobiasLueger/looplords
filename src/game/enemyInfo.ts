@@ -1,5 +1,4 @@
-import { DIFFICULTY_MODIFIERS } from './constants';
-import type { Difficulty, EnemyType } from './types';
+import type { EnemyType } from './types';
 import { hasUpgrade } from './upgrades';
 
 function getEnemySpeed(type: EnemyType): number {
@@ -13,10 +12,9 @@ function getEnemySpeed(type: EnemyType): number {
   }
 }
 
-export function getEnemyDamage(type: EnemyType, difficulty: Difficulty): number {
+export function getEnemyDamage(type: EnemyType): number {
   const base = type === 'boss' ? 2 : type === 'elite' ? 2 : 1;
-  const mult = DIFFICULTY_MODIFIERS[difficulty].damageMult;
-  return Math.max(1, Math.round(base * mult));
+  return Math.max(1, Math.round(base));
 }
 
 export function getEnemyDisplayName(type: EnemyType): string {
@@ -36,13 +34,12 @@ export function getEnemyDisplayName(type: EnemyType): string {
 
 export function getEnemyTooltipLines(
   type: EnemyType,
-  difficulty: Difficulty,
   hp: number,
   maxHp: number,
   upgradeIds: string[],
 ): string[] {
   const speed = getEnemySpeed(type);
-  const damage = getEnemyDamage(type, difficulty);
+  const damage = getEnemyDamage(type);
   const lines: string[] = [
     getEnemyDisplayName(type),
     `Bewegung: ${speed} Feld${speed > 1 ? 'er' : ''} pro Gegnerzug`,
@@ -66,10 +63,9 @@ export function getEnemyTooltipLines(
 
 export function getEnemyTooltipTitle(
   type: EnemyType,
-  difficulty: Difficulty,
   hp: number,
   maxHp: number,
   upgradeIds: string[],
 ): string {
-  return getEnemyTooltipLines(type, difficulty, hp, maxHp, upgradeIds).join(' · ');
+  return getEnemyTooltipLines(type, hp, maxHp, upgradeIds).join(' · ');
 }
