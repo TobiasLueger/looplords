@@ -2,7 +2,7 @@ import type { UpgradeDefinition } from '../game/upgrades';
 import { UPGRADES } from '../game/upgrades';
 import type { RunState } from '../game/types';
 import { INSTANT_TICKET_PRICE } from '../game/constants';
-import { SHOP_REROLL_COST } from '../game/shop';
+import { getShopRerollCost } from '../game/shop';
 import { RUINS_UI } from '../utils/ruinsAssets';
 import { INSTANT_TICKET_DEFS } from '../game/instantTickets';
 import { InstantTicketCard } from './InstantTicketCard';
@@ -31,6 +31,7 @@ export function ShopScreen({
   onBuyInstantTicket,
 }: ShopScreenProps) {
   const pickingUpgrade = run.pendingUpgradeOptions.length > 0;
+  const rerollCost = getShopRerollCost(run.shopRerollsUsed);
   const upgradeOptions = run.pendingUpgradeOptions
     .map((id) => UPGRADES.find((u) => u.id === id))
     .filter(Boolean) as UpgradeDefinition[];
@@ -108,9 +109,9 @@ export function ShopScreen({
 
       <div className="mt-4">
         <StoneMenuButton
-          label={`Chips neu würfeln (${SHOP_REROLL_COST} Gold)`}
+          label={`Chips neu würfeln (${rerollCost} Gold)`}
           onClick={onReroll}
-          disabled={run.gold < SHOP_REROLL_COST}
+          disabled={run.gold < rerollCost}
           className="w-auto max-w-none sm:max-w-md"
         />
       </div>

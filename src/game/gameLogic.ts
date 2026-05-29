@@ -162,6 +162,7 @@ export function createInitialRunState(upgradeIds: string[] = []): RunState {
       shopChipOffers: [],
       shopTicketOffers: [],
       shopOpen: false,
+      shopRerollsUsed: 0,
       bossUpgradePending: false,
       endlessMode: false,
       runMilestones: { ...EMPTY_RUN_MILESTONES },

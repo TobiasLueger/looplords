@@ -119,6 +119,8 @@ export interface RunState {
   shopChipOffers: ShopChipOffer[];
   shopTicketOffers: ShopTicketOffer[];
   shopOpen: boolean;
+  /** Rerolls used this shop visit; cost is SHOP_REROLL_BASE_COST + shopRerollsUsed. */
+  shopRerollsUsed: number;
   /** Must pick one of pendingUpgradeOptions before leaving shop (after boss rounds). */
   bossUpgradePending: boolean;
   endlessMode: boolean;

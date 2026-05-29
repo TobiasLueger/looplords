@@ -1,6 +1,6 @@
 import {
   SHOP_ABILITY_OFFER_COUNT,
-  SHOP_REROLL_COST,
+  SHOP_REROLL_BASE_COST,
   SHOP_STANDARD_OFFER_COUNT,
   SHOP_TICKET_OFFER_COUNT,
   isBossRound,
@@ -16,7 +16,11 @@ import type {
 } from './types';
 import { pickRandomUpgrades } from './upgrades';
 
-export { SHOP_REROLL_COST };
+export { SHOP_REROLL_BASE_COST };
+
+export function getShopRerollCost(rerollsUsed: number): number {
+  return SHOP_REROLL_BASE_COST + rerollsUsed;
+}
 
 export function getGoldForEnemyType(type: EnemyType): number {
   switch (type) {
@@ -223,6 +227,7 @@ export function openShopState(
   shopOpen: boolean;
   shopChipOffers: ShopChipOffer[];
   shopTicketOffers: ShopTicketOffer[];
+  shopRerollsUsed: number;
   upgradeTickets: number;
   instantTickets: InstantTickets;
   pendingUpgradeOptions: string[];
@@ -236,6 +241,7 @@ export function openShopState(
     shopOpen: true,
     shopChipOffers: pickRandomShopOffers(),
     shopTicketOffers: pickRandomShopTicketOffers(),
+    shopRerollsUsed: 0,
     upgradeTickets: 0,
     instantTickets,
     pendingUpgradeOptions: afterBoss

@@ -59,7 +59,7 @@ export function isBossRound(round: number): boolean {
 export const SHOP_OFFER_COUNT = 6;
 export const SHOP_STANDARD_OFFER_COUNT = 3;
 export const SHOP_ABILITY_OFFER_COUNT = 3;
-export const SHOP_REROLL_COST = 4;
+export const SHOP_REROLL_BASE_COST = 2;
 export const SHOP_TICKET_OFFER_COUNT = 4;
 export const INSTANT_TICKET_PRICE = 4;
 export const INSTANT_TICKET_SELL_PRICE = 2;

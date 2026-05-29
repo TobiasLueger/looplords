@@ -5,8 +5,8 @@ import { applySmiteToNearest, applyUpgradeToRun, startRound } from './gameLogic'
 import { INSTANT_TICKET_DEFS } from './instantTickets';
 import {
   createChipFromShopTemplate,
+  getShopRerollCost,
   pickRandomShopOffers,
-  SHOP_REROLL_COST,
 } from './shop';
 
 function addLog(state: RunState, message: string): string[] {
@@ -40,13 +40,15 @@ export function buyShopChip(state: RunState, offerId: string): RunState {
 }
 
 export function rerollShopOffers(state: RunState): RunState {
-  if (state.gold < SHOP_REROLL_COST) return state;
+  const cost = getShopRerollCost(state.shopRerollsUsed);
+  if (state.gold < cost) return state;
 
   return bumpShopPurchase({
     ...state,
-    gold: state.gold - SHOP_REROLL_COST,
+    gold: state.gold - cost,
     shopChipOffers: pickRandomShopOffers(),
-    eventLog: addLog(state, `Chips neu gewürfelt (−${SHOP_REROLL_COST} Gold).`),
+    shopRerollsUsed: state.shopRerollsUsed + 1,
+    eventLog: addLog(state, `Chips neu gewürfelt (−${cost} Gold).`),
   });
 }
 
@@ -193,6 +195,7 @@ export function leaveShop(state: RunState, difficulty: Difficulty): RunState {
     shopOpen: false,
     shopChipOffers: [],
     shopTicketOffers: [],
+    shopRerollsUsed: 0,
     pendingUpgradeOptions: [],
     bossUpgradePending: false,
     upgradeTickets: 0,
