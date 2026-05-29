@@ -22,6 +22,10 @@ export default {
       animation: {
         'pulse-kill': 'pulseKill 0.5s ease-out',
         'chip-select': 'chipSelect 0.2s ease-out',
+        'player-hop': 'playerHop 0.19s ease-out',
+        'player-strike': 'playerStrike 0.32s ease-out',
+        'enemy-splatter': 'enemySplatter 0.32s ease-out forwards',
+        'enemy-death': 'enemyDeath 0.32s ease-out forwards',
       },
       keyframes: {
         pulseKill: {
@@ -31,6 +35,26 @@ export default {
         chipSelect: {
           '0%': { transform: 'translateY(0)' },
           '100%': { transform: 'translateY(-4px)' },
+        },
+        playerHop: {
+          '0%, 100%': { transform: 'translateY(0) scale(1)' },
+          '45%': { transform: 'translateY(-28%) scale(1.04)' },
+        },
+        playerStrike: {
+          '0%': { transform: 'translateY(0) scale(1) rotate(0deg)' },
+          '35%': { transform: 'translateY(-6%) scale(1.14) rotate(-14deg)' },
+          '65%': { transform: 'translateY(2%) scale(1.06) rotate(8deg)' },
+          '100%': { transform: 'translateY(0) scale(1) rotate(0deg)' },
+        },
+        enemySplatter: {
+          '0%': { opacity: '0', transform: 'scale(0.35)' },
+          '25%': { opacity: '1', transform: 'scale(1)' },
+          '100%': { opacity: '0', transform: 'scale(1.45)' },
+        },
+        enemyDeath: {
+          '0%': { transform: 'scale(1) rotate(0deg)', opacity: '1' },
+          '35%': { transform: 'scale(1.08) rotate(-10deg)', opacity: '1' },
+          '100%': { transform: 'scale(0.55) rotate(18deg)', opacity: '0' },
         },
       },
     },

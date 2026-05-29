@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { GameSettings, RunState } from '../game/types';
 import type { InstantTicketType } from '../game/types';
+import type { PlayerMoveRequest } from '../hooks/usePlayerHopAnimation';
+import type { ProjectileShotRequest } from '../hooks/useProjectileShotAnimation';
+import type { NovaBlastRequest } from '../hooks/useNovaBlastAnimation';
 import { getChipSprite } from '../utils/assets';
 import { RUINS_ACTIONS, RUINS_BACKGROUNDS, RUINS_UI } from '../utils/ruinsAssets';
 import { Board } from './Board';
@@ -26,6 +29,19 @@ interface GameScreenProps {
   onOpenSettings: () => void;
   onUseInstantTicket: (type: InstantTicketType) => void;
   onSellInstantTicket: (type: InstantTicketType) => void;
+  playerMoveRequest: PlayerMoveRequest | null;
+  onPlayerMoveComplete: () => void;
+  onKillStrike?: () => void;
+  sniperShotRequest: ProjectileShotRequest | null;
+  onSniperShotComplete: () => void;
+  onSniperImpact?: () => void;
+  cleaveThrowRequest: ProjectileShotRequest | null;
+  onCleaveThrowComplete: () => void;
+  onCleaveImpact?: () => void;
+  novaBlastRequest: NovaBlastRequest | null;
+  onNovaBlastComplete: () => void;
+  onNovaImpact?: () => void;
+  isBoardAnimating: boolean;
 }
 
 export function GameScreen({
@@ -42,6 +58,19 @@ export function GameScreen({
   onOpenSettings,
   onUseInstantTicket,
   onSellInstantTicket,
+  playerMoveRequest,
+  onPlayerMoveComplete,
+  onKillStrike,
+  sniperShotRequest,
+  onSniperShotComplete,
+  onSniperImpact,
+  cleaveThrowRequest,
+  onCleaveThrowComplete,
+  onCleaveImpact,
+  novaBlastRequest,
+  onNovaBlastComplete,
+  onNovaImpact,
+  isBoardAnimating,
 }: GameScreenProps) {
   const [showBag, setShowBag] = useState(false);
 
@@ -52,6 +81,7 @@ export function GameScreen({
   }, [run.lastKillFlash, onClearKillFlash]);
 
   const canPlay =
+    !isBoardAnimating &&
     run.selectedChipIds.length > 0 &&
     run.turnsRemaining > 0 &&
     (selectedChipSum !== 0 || hasTeleportSelected || hasUtilityChipSelected);
@@ -138,6 +168,18 @@ export function GameScreen({
               run={run}
               animations={settings.animations}
               difficulty={settings.difficulty}
+              playerMoveRequest={playerMoveRequest}
+              onPlayerMoveComplete={onPlayerMoveComplete}
+              onKillStrike={onKillStrike}
+              sniperShotRequest={sniperShotRequest}
+              onSniperShotComplete={onSniperShotComplete}
+              onSniperImpact={onSniperImpact}
+              cleaveThrowRequest={cleaveThrowRequest}
+              onCleaveThrowComplete={onCleaveThrowComplete}
+              onCleaveImpact={onCleaveImpact}
+              novaBlastRequest={novaBlastRequest}
+              onNovaBlastComplete={onNovaBlastComplete}
+              onNovaImpact={onNovaImpact}
             />
           </div>
 
@@ -175,13 +217,13 @@ export function GameScreen({
                   icon={RUINS_ACTIONS.discardRedraw}
                   label="Abwerfen / Neu ziehen"
                   onClick={onDiscard}
-                  disabled={run.discardsRemaining <= 0}
+                  disabled={isBoardAnimating || run.discardsRemaining <= 0}
                 />
                 <SpriteGameButton
                   icon={RUINS_ACTIONS.endTurn}
                   label="Zug beenden"
                   onClick={onEndTurn}
-                  disabled={run.turnsRemaining <= 0}
+                  disabled={isBoardAnimating || run.turnsRemaining <= 0}
                 />
               </div>
             </RuinsPanel>

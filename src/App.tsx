@@ -53,6 +53,19 @@ export default function App() {
     handleUseInstantTicket,
     handleSellInstantTicket,
     clearKillFlash,
+    playerMoveAnim,
+    handlePlayerMoveComplete,
+    handleKillStrike,
+    sniperShotAnim,
+    commitPendingSniper,
+    handleSniperImpact,
+    cleaveThrowAnim,
+    commitPendingCleave,
+    handleCleaveImpact,
+    novaBlastAnim,
+    commitPendingNova,
+    handleNovaImpact,
+    isBoardAnimating,
     selectedChipSum,
     hasTeleportSelected,
     hasUtilityChipSelected,
@@ -147,6 +160,19 @@ export default function App() {
           onOpenSettings={() => openSettings('game')}
           onUseInstantTicket={handleUseInstantTicket}
           onSellInstantTicket={handleSellInstantTicket}
+          playerMoveRequest={playerMoveAnim}
+          onPlayerMoveComplete={handlePlayerMoveComplete}
+          onKillStrike={handleKillStrike}
+          sniperShotRequest={sniperShotAnim}
+          onSniperShotComplete={commitPendingSniper}
+          onSniperImpact={handleSniperImpact}
+          cleaveThrowRequest={cleaveThrowAnim}
+          onCleaveThrowComplete={commitPendingCleave}
+          onCleaveImpact={handleCleaveImpact}
+          novaBlastRequest={novaBlastAnim}
+          onNovaBlastComplete={commitPendingNova}
+          onNovaImpact={handleNovaImpact}
+          isBoardAnimating={isBoardAnimating}
         />
       );
 

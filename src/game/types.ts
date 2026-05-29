@@ -127,6 +127,10 @@ export interface RunState {
   endlessMode: boolean;
   runMilestones: RunMilestones;
   pendingEndlessChoice: boolean;
+  /** Step counts per movement segment for board hop animation (last playChips action). */
+  playerMoveSteps: number[];
+  /** Incremented when playerMoveSteps is set so the UI animates once per action. */
+  playerMoveToken: number;
 }
 
 export interface RunEndStats {

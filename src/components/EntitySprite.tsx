@@ -7,6 +7,7 @@ interface EntitySpriteProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   animate?: boolean;
   flash?: boolean;
+  className?: string;
 }
 
 const sizeMap = {
@@ -32,6 +33,7 @@ export function EntitySprite({
   size = 'md',
   animate,
   flash,
+  className = '',
 }: EntitySpriteProps) {
   const src =
     kind === 'player' ? getPlayerSprite() : getEnemySprite(enemyType);
@@ -45,7 +47,7 @@ export function EntitySprite({
       <img
         src={src}
         alt={kind === 'player' ? 'Spieler' : enemyType}
-        className={`${sizeClass} object-contain ${animClass} ${flashClass}`}
+        className={`${sizeClass} object-contain ${animClass} ${flashClass} ${className}`}
         style={{ filter: ENTITY_OUTLINE_FILTER }}
         draggable={false}
       />
@@ -59,7 +61,7 @@ export function EntitySprite({
 
   return (
     <span
-      className={`inline-block rounded-full ${sizeClass} ${color} ${animClass} ${flashClass}`}
+      className={`inline-block rounded-full ${sizeClass} ${color} ${animClass} ${flashClass} ${className}`}
       aria-hidden
     />
   );

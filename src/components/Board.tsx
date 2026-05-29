@@ -1,8 +1,22 @@
 import { useMemo } from 'react';
 import type { Difficulty, RunState } from '../game/types';
 import { getEntitiesOnCell } from '../game/gameLogic';
+import {
+  usePlayerHopAnimation,
+  type PlayerMoveRequest,
+} from '../hooks/usePlayerHopAnimation';
+import {
+  useProjectileShotAnimation,
+  type ProjectileShotRequest,
+} from '../hooks/useProjectileShotAnimation';
+import {
+  useNovaBlastAnimation,
+  type NovaBlastRequest,
+} from '../hooks/useNovaBlastAnimation';
 import { RUINS_BACKGROUNDS, RUINS_BOARD } from '../utils/ruinsAssets';
 import { BoardCell } from './BoardCell';
+import { BoardProjectile } from './BoardProjectile';
+import { EntitySprite } from './EntitySprite';
 
 const BOARD_COORD_SIZE = 200;
 
@@ -10,9 +24,37 @@ interface BoardProps {
   run: RunState;
   animations: boolean;
   difficulty: Difficulty;
+  playerMoveRequest: PlayerMoveRequest | null;
+  onPlayerMoveComplete: () => void;
+  onKillStrike?: () => void;
+  sniperShotRequest: ProjectileShotRequest | null;
+  onSniperShotComplete: () => void;
+  onSniperImpact?: () => void;
+  cleaveThrowRequest: ProjectileShotRequest | null;
+  onCleaveThrowComplete: () => void;
+  onCleaveImpact?: () => void;
+  novaBlastRequest: NovaBlastRequest | null;
+  onNovaBlastComplete: () => void;
+  onNovaImpact?: () => void;
 }
 
-export function Board({ run, animations, difficulty }: BoardProps) {
+export function Board({
+  run,
+  animations,
+  difficulty,
+  playerMoveRequest,
+  onPlayerMoveComplete,
+  onKillStrike,
+  sniperShotRequest,
+  onSniperShotComplete,
+  onSniperImpact,
+  cleaveThrowRequest,
+  onCleaveThrowComplete,
+  onCleaveImpact,
+  novaBlastRequest,
+  onNovaBlastComplete,
+  onNovaImpact,
+}: BoardProps) {
   const cellPositions = useMemo(() => {
     const cells: { index: number; x: number; y: number }[] = [];
     const n = run.boardSize;
@@ -29,7 +71,77 @@ export function Board({ run, animations, difficulty }: BoardProps) {
     return cells;
   }, [run.boardSize]);
 
+  const { displayCell, isAnimating, splatterCells, defeatedEnemyCells } =
+    usePlayerHopAnimation(
+    run.playerPosition,
+    run.boardSize,
+    playerMoveRequest,
+    animations,
+    onPlayerMoveComplete,
+    onKillStrike,
+  );
+
+  const { phase: sniperPhase, splatterCell: sniperSplatterCell } =
+    useProjectileShotAnimation(
+      sniperShotRequest,
+      animations,
+      onSniperShotComplete,
+      onSniperImpact,
+    );
+
+  const { phase: cleavePhase, splatterCell: cleaveSplatterCell } =
+    useProjectileShotAnimation(
+      cleaveThrowRequest,
+      animations,
+      onCleaveThrowComplete,
+      onCleaveImpact,
+    );
+
+  const { activeSplatterCells: novaSplatterCells, defeatedCells: novaDefeatedCells } =
+    useNovaBlastAnimation(
+      novaBlastRequest,
+      animations,
+      onNovaBlastComplete,
+      onNovaImpact,
+    );
+
+  const defeatedEnemyCellSet = useMemo(() => {
+    const set = new Set(defeatedEnemyCells);
+    for (const cell of novaDefeatedCells) {
+      set.add(cell);
+    }
+    return set;
+  }, [defeatedEnemyCells, novaDefeatedCells]);
+
+  const splatterSet = useMemo(() => {
+    const set = new Set(splatterCells);
+    for (const cell of novaSplatterCells) {
+      set.add(cell);
+    }
+    if (sniperSplatterCell !== null) set.add(sniperSplatterCell);
+    if (cleaveSplatterCell !== null) set.add(cleaveSplatterCell);
+    return set;
+  }, [splatterCells, novaSplatterCells, sniperSplatterCell, cleaveSplatterCell]);
+
+  const animatedPlayerPos = cellPositions.find((c) => c.index === displayCell);
   const cellSizePercent = Math.max(10, Math.min(18, 130 / run.boardSize));
+  const showAnimatedPlayer =
+    animatedPlayerPos &&
+    (isAnimating || playerMoveRequest !== null || cleaveThrowRequest !== null);
+
+  const sniperFrom = sniperShotRequest
+    ? cellPositions.find((c) => c.index === sniperShotRequest.fromCell)
+    : null;
+  const sniperTo = sniperShotRequest
+    ? cellPositions.find((c) => c.index === sniperShotRequest.toCell)
+    : null;
+
+  const cleaveFrom = cleaveThrowRequest
+    ? cellPositions.find((c) => c.index === cleaveThrowRequest.fromCell)
+    : null;
+  const cleaveTo = cleaveThrowRequest
+    ? cellPositions.find((c) => c.index === cleaveThrowRequest.toCell)
+    : null;
 
   return (
     <div
@@ -71,7 +183,15 @@ export function Board({ run, animations, difficulty }: BoardProps) {
 
       <div className="absolute inset-0 z-[10] overflow-visible">
         {cellPositions.map(({ index, x, y }) => {
-          const { player, enemies } = getEntitiesOnCell(run, index);
+          const { enemies: cellEnemies } = getEntitiesOnCell(run, index);
+          const enemies = cellEnemies.filter(
+            (e) => !defeatedEnemyCellSet.has(e.position),
+          );
+          const isPlayerHere = !showAnimatedPlayer && run.playerPosition === index;
+          const enemyDying =
+            splatterSet.has(index) ||
+            (sniperPhase === 'impact' && sniperSplatterCell === index) ||
+            (cleavePhase === 'impact' && cleaveSplatterCell === index);
           return (
             <div
               key={index}
@@ -85,10 +205,12 @@ export function Board({ run, animations, difficulty }: BoardProps) {
             >
               <BoardCell
                 index={index}
-                isPlayerHere={player}
+                isPlayerHere={isPlayerHere}
                 enemies={enemies}
                 animations={animations}
-                killFlash={run.lastKillFlash && player}
+                killFlash={run.lastKillFlash && isPlayerHere}
+                showSplatter={splatterSet.has(index)}
+                enemyDying={enemyDying}
                 difficulty={difficulty}
                 upgradeIds={run.upgradeIds}
                 run={run}
@@ -97,6 +219,51 @@ export function Board({ run, animations, difficulty }: BoardProps) {
           );
         })}
       </div>
+
+      {sniperFrom && sniperTo && (
+        <BoardProjectile
+          kind="arrow"
+          fromX={sniperFrom.x}
+          fromY={sniperFrom.y}
+          toX={sniperTo.x}
+          toY={sniperTo.y}
+          boardCoordSize={BOARD_COORD_SIZE}
+          active={sniperPhase === 'flight'}
+        />
+      )}
+
+      {cleaveFrom && cleaveTo && (
+        <BoardProjectile
+          kind="knife"
+          fromX={cleaveFrom.x}
+          fromY={cleaveFrom.y}
+          toX={cleaveTo.x}
+          toY={cleaveTo.y}
+          boardCoordSize={BOARD_COORD_SIZE}
+          active={cleavePhase === 'flight'}
+        />
+      )}
+
+      {showAnimatedPlayer && (
+        <div
+          className="pointer-events-none absolute z-[30] -translate-x-1/2 -translate-y-1/2 transition-[left,top] duration-[190ms] ease-out"
+          style={{
+            left: `${(animatedPlayerPos.x / BOARD_COORD_SIZE) * 100}%`,
+            top: `${(animatedPlayerPos.y / BOARD_COORD_SIZE) * 100}%`,
+            width: `${cellSizePercent}%`,
+            maxWidth: '5.5rem',
+          }}
+        >
+          <div
+            key={displayCell}
+            className={`flex items-center justify-center ${
+              splatterCells.length > 0 ? 'animate-player-strike' : 'animate-player-hop'
+            }`}
+          >
+            <EntitySprite kind="player" size="xl" animate={false} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

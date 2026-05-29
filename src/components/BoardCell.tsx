@@ -1,6 +1,7 @@
 import type { Difficulty, Enemy, RunState } from '../game/types';
 import { ENTITY_CELL_GROUND } from '../utils/ruinsAssets';
 import { EnemyTooltip } from './EnemyTooltip';
+import { KillSplatter } from './KillSplatter';
 import { PlayerTooltip } from './PlayerTooltip';
 import { EntitySprite } from './EntitySprite';
 
@@ -10,6 +11,8 @@ interface BoardCellProps {
   enemies: Enemy[];
   animations: boolean;
   killFlash: boolean;
+  showSplatter: boolean;
+  enemyDying?: boolean;
   difficulty: Difficulty;
   upgradeIds: string[];
   run: RunState;
@@ -21,6 +24,8 @@ export function BoardCell({
   enemies,
   animations,
   killFlash,
+  showSplatter,
+  enemyDying = false,
   difficulty,
   upgradeIds,
   run,
@@ -46,6 +51,8 @@ export function BoardCell({
           className="h-full w-full object-cover"
         />
       </div>
+
+      <KillSplatter active={showSplatter} />
 
       <span
         className="pointer-events-none absolute left-0.5 top-0.5 z-10 text-[9px] font-semibold text-white sm:text-[10px]"
@@ -86,8 +93,9 @@ export function BoardCell({
                 enemyType={e.type}
                 size={enemySize}
                 animate={animations}
+                className={showSplatter || enemyDying ? 'animate-enemy-death' : ''}
               />
-              {e.hp > 1 && (
+              {e.hp > 1 && !showSplatter && !enemyDying && (
                 <span className="absolute -right-2 -top-2 z-30 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-loop-danger text-[11px] font-bold leading-none text-white shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
                   {e.hp}
                 </span>

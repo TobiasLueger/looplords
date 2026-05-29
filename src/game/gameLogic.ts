@@ -167,6 +167,8 @@ export function createInitialRunState(upgradeIds: string[] = []): RunState {
       endlessMode: false,
       runMilestones: { ...EMPTY_RUN_MILESTONES },
       pendingEndlessChoice: false,
+      playerMoveSteps: [],
+      playerMoveToken: 0,
     },
     'normal',
     1,
@@ -240,6 +242,7 @@ export function startRound(
     playerTurnCount: 0,
     pendingUpgradeOptions: [],
     lastKillFlash: false,
+    playerMoveSteps: [],
     eventLog: addLog(
       prev,
       bossRound
@@ -326,7 +329,7 @@ function getNearestEnemyClockwise(
   );
 }
 
-function cellsAlongPath(from: number, steps: number, boardSize: number): number[] {
+export function cellsAlongPath(from: number, steps: number, boardSize: number): number[] {
   if (steps === 0) return [];
 
   const cells: number[] = [];
@@ -372,6 +375,28 @@ function applyHitToNearestFrom(state: RunState, fromPosition: number): RunState 
 
 export function applySmiteToNearest(state: RunState): RunState {
   return applyHitToNearestFrom(state, state.playerPosition);
+}
+
+/** Board cell index of the sniper ticket's clockwise-nearest target, or null. */
+export function getSniperTargetCell(state: RunState): number | null {
+  const target = getNearestEnemyClockwise(
+    state.playerPosition,
+    state.enemies,
+    state.boardSize,
+  );
+  return target?.position ?? null;
+}
+
+export function getNearestEnemyTargetCell(
+  fromPosition: number,
+  enemies: Enemy[],
+  boardSize: number,
+): number | null {
+  const target = getNearestEnemyClockwise(fromPosition, enemies, boardSize);
+  if (!target) return null;
+  const dist = clockwiseDistance(fromPosition, target.position, boardSize);
+  if (dist <= 0) return null;
+  return target.position;
 }
 
 export function damageAllEnemiesOnce(state: RunState): RunState {
@@ -619,13 +644,13 @@ export function playChips(state: RunState, difficulty: Difficulty): RunState {
   if (hasNova) {
     next = damageAllEnemiesOnce(next);
     next.eventLog = addLog(next, 'Nova-Chip: alle Gegner -1 Treffer.');
-    if (next.enemies.length === 0) {
-      return onRoundWon(next);
-    }
   }
+
+  const moveSegments: number[] = [];
 
   if (hasTeleport) {
     const teleportSteps = Math.floor(next.boardSize / 2);
+    moveSegments.push(teleportSteps);
     next.playerPosition = moveClockwise(
       next.playerPosition,
       teleportSteps,
@@ -657,9 +682,6 @@ export function playChips(state: RunState, difficulty: Difficulty): RunState {
       );
       next = damageEnemiesOnCells(next, pathCells);
       next.eventLog = addLog(next, 'Durchstoß-Chip: Treffer entlang des Wegs!');
-      if (next.enemies.length === 0) {
-        return onRoundWon(next);
-      }
     }
 
     next.playerPosition = moveClockwise(
@@ -667,6 +689,7 @@ export function playChips(state: RunState, difficulty: Difficulty): RunState {
       moveSteps,
       next.boardSize,
     );
+    moveSegments.push(moveSteps);
     next.eventLog = addLog(
       next,
       hasGrapple
@@ -690,6 +713,7 @@ export function playChips(state: RunState, difficulty: Difficulty): RunState {
   }
 
   if (hasUpgrade(next.upgradeIds, 'kill_momentum') && next.killsThisRound > state.killsThisRound) {
+    moveSegments.push(1);
     next.playerPosition = moveClockwise(
       next.playerPosition,
       1,
@@ -697,6 +721,14 @@ export function playChips(state: RunState, difficulty: Difficulty): RunState {
     );
     next = resolveLanding(next, next.playerPosition);
     next.eventLog = addLog(next, 'Durchbruch: +1 Feld nach dem Kill.');
+  }
+
+  if (moveSegments.length > 0) {
+    next = {
+      ...next,
+      playerMoveSteps: moveSegments,
+      playerMoveToken: state.playerMoveToken + 1,
+    };
   }
 
   if (next.enemies.length === 0) {
@@ -848,6 +880,14 @@ function onRoundWon(state: RunState): RunState {
         : `Runde ${state.round} geschafft! Shop — ${state.gold} Gold.`,
     ),
   };
+}
+
+/** Opens shop / campaign choice when the board is clear (e.g. Scharfschuss-Ticket). */
+export function triggerRoundWinIfClear(state: RunState): RunState {
+  if (state.enemies.length > 0 || state.shopOpen || state.pendingEndlessChoice) {
+    return state;
+  }
+  return onRoundWon(state);
 }
 
 export function openEndlessShop(state: RunState): RunState {

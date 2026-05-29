@@ -1,7 +1,7 @@
 import { INSTANT_TICKET_PRICE, INSTANT_TICKET_SELL_PRICE } from './constants';
 import type { Difficulty, InstantTicketType, RunState } from './types';
 import { shuffle } from './deck';
-import { applySmiteToNearest, applyUpgradeToRun, startRound } from './gameLogic';
+import { applySmiteToNearest, applyUpgradeToRun, startRound, triggerRoundWinIfClear } from './gameLogic';
 import { INSTANT_TICKET_DEFS } from './instantTickets';
 import {
   createChipFromShopTemplate,
@@ -113,6 +113,7 @@ export function useInstantTicket(
       if (next.enemies.length === 0) return state;
       next = applySmiteToNearest(next);
       next = { ...next, eventLog: addLog(next, `${def?.name}: Treffer!`) };
+      next = triggerRoundWinIfClear(next);
       break;
     case 'surge':
       next = { ...next, turnsRemaining: next.turnsRemaining + 1 };
