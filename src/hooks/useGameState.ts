@@ -32,6 +32,7 @@ const SETTINGS_KEY = 'looplords-settings';
 
 const defaultSettings: GameSettings = {
   music: true,
+  musicVolume: 70,
   sound: true,
   animations: true,
   difficulty: 'normal',
@@ -40,7 +41,14 @@ const defaultSettings: GameSettings = {
 function loadSettings(): GameSettings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
-    if (raw) return { ...defaultSettings, ...JSON.parse(raw) };
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<GameSettings>;
+      const musicVolume =
+        typeof parsed.musicVolume === 'number'
+          ? Math.max(0, Math.min(100, Math.round(parsed.musicVolume)))
+          : defaultSettings.musicVolume;
+      return { ...defaultSettings, ...parsed, musicVolume };
+    }
   } catch {
     /* ignore */
   }
@@ -174,12 +182,26 @@ export function useGameState() {
   }, []);
 
   const handleBuyShopChip = useCallback((offerId: string) => {
-    setRun((r) => (r ? buyShopChip(r, offerId) : r));
-  }, []);
+    setRun((r) => {
+      if (!r) return r;
+      const next = buyShopChip(r, offerId);
+      if (settings.sound && next.gold < r.gold) {
+        chiptune.playSfx('coin');
+      }
+      return next;
+    });
+  }, [settings.sound]);
 
   const handleRerollShop = useCallback(() => {
-    setRun((r) => (r ? rerollShopOffers(r) : r));
-  }, []);
+    setRun((r) => {
+      if (!r) return r;
+      const next = rerollShopOffers(r);
+      if (settings.sound && next.gold < r.gold) {
+        chiptune.playSfx('coin');
+      }
+      return next;
+    });
+  }, [settings.sound]);
 
   const handleRedeemUpgrade = useCallback((upgradeId: string) => {
     setRun((r) => (r ? redeemUpgradeTicket(r, upgradeId) : r));
@@ -214,8 +236,15 @@ export function useGameState() {
   }, [run]);
 
   const handleBuyInstantTicket = useCallback((offerId: string) => {
-    setRun((r) => (r ? buyInstantTicket(r, offerId) : r));
-  }, []);
+    setRun((r) => {
+      if (!r) return r;
+      const next = buyInstantTicket(r, offerId);
+      if (settings.sound && next.gold < r.gold) {
+        chiptune.playSfx('coin');
+      }
+      return next;
+    });
+  }, [settings.sound]);
 
   const handleUseInstantTicket = useCallback((type: InstantTicketType) => {
     setRun((r) => (r ? useInstantTicket(r, type) : r));

@@ -138,8 +138,8 @@ export function sumSelectedChipSteps(
       hasOvercharge = true;
       continue;
     }
-    if (isUtilityChip(c)) {
-      if (c.special === 'retreat') base -= 2;
+    if (c.special === 'retreat') {
+      base -= 2;
       continue;
     }
     if (c.special === 'dash') {
@@ -148,6 +148,9 @@ export function sumSelectedChipSteps(
     }
     if (c.special === 'leap') {
       base -= 4;
+      continue;
+    }
+    if (isUtilityChip(c)) {
       continue;
     }
     base += c.value;

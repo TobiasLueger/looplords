@@ -3,6 +3,7 @@ import { ScreenLayout } from './ui/ScreenLayout';
 import { StoneGroundSurface } from './ui/StoneGroundSurface';
 import { StoneMenuButton } from './ui/StoneMenuButton';
 import { Toggle } from './ui/Toggle';
+import { VolumeSlider } from './ui/VolumeSlider';
 import { ENTITY_CELL_GROUND } from '../utils/ruinsAssets';
 
 interface SettingsScreenProps {
@@ -40,6 +41,12 @@ export function SettingsScreen({
           label="Musik"
           checked={settings.music}
           onChange={(music) => onUpdate({ music })}
+        />
+        <VolumeSlider
+          label="Musiklautstärke"
+          value={settings.musicVolume}
+          onChange={(musicVolume) => onUpdate({ musicVolume })}
+          disabled={!settings.music}
         />
         <Toggle
           label="Sound"

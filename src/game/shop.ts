@@ -140,7 +140,7 @@ const SHOP_ABILITY_CHIPS: ShopChipTemplate[] = [
   {
     id: 'retreat',
     name: 'Rückzug-Chip',
-    description: '2 Felder gegen den Uhrzeigersinn.',
+    description: 'Bewege dich 2 Felder gegen den Uhrzeigersinn.',
     price: 4,
     create: () => createChip(0, 'retreat'),
   },

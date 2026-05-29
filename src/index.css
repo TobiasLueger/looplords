@@ -162,4 +162,24 @@
     height: min(92vw, 700px);
     max-width: 100%;
   }
+
+  .volume-slider {
+    @apply h-2 w-full cursor-pointer appearance-none rounded-full border border-black/25 bg-stone-950/70;
+  }
+
+  .volume-slider:disabled {
+    @apply cursor-not-allowed;
+  }
+
+  .volume-slider::-webkit-slider-thumb {
+    @apply h-4 w-4 appearance-none rounded-full border-2 border-loop-accent bg-stone-100 shadow-[0_2px_6px_rgba(0,0,0,0.65)];
+  }
+
+  .volume-slider::-moz-range-thumb {
+    @apply h-4 w-4 rounded-full border-2 border-loop-accent bg-stone-100 shadow-[0_2px_6px_rgba(0,0,0,0.65)];
+  }
+
+  .volume-slider::-moz-range-track {
+    @apply h-2 rounded-full border border-black/25 bg-stone-950/70;
+  }
 }

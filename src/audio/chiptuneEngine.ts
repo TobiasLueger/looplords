@@ -1,5 +1,6 @@
-export type MusicTrack = 'menu' | 'battle';
-export type SfxType = 'chip' | 'kill';
+import looplordMp3 from '../../assets/audio/looplord.mp3';
+
+export type SfxType = 'chip' | 'kill' | 'coin';
 
 const NOTE: Record<string, number> = {
   G2: 98.0,
@@ -19,27 +20,30 @@ const NOTE: Record<string, number> = {
   Ab4: 415.3,
   Bb4: 466.16,
   C5: 523.25,
+  G5: 783.99,
+  Bb5: 932.33,
+  D6: 1174.66,
 };
 
-const MENU_BASS = ['C3', 'C3', 'Eb3', 'G3', 'Bb2', 'Bb2', 'C3', 'G3'] as const;
-const MENU_ARP = ['C4', 'Eb4', 'G4', 'Bb4', 'C5', 'Bb4', 'G4', 'Eb4'] as const;
-
-const BATTLE_BASS = ['C3', 'G2', 'Bb2', 'C3', 'Eb3', 'Bb2', 'G2', 'C3'] as const;
-const BATTLE_MELODY = ['Eb4', 'G4', 'Bb4', 'C5', 'Bb4', 'G4', 'F4', 'Eb4'] as const;
+const MUSIC_CROSSFADE_SEC = 2.5;
+const MUSIC_SCHEDULE_LOOKAHEAD_SEC = 20;
 
 class ChiptuneEngine {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
   private sfxGain: GainNode | null = null;
-  private intervalId: ReturnType<typeof setInterval> | null = null;
-  private currentTrack: MusicTrack | null = null;
-  private pendingTrack: MusicTrack | null = null;
-  private step = 0;
+  private musicBuffer: AudioBuffer | null = null;
+  private musicLoading: Promise<void> | null = null;
+  private musicPlaying = false;
+  private musicScheduledUntil = 0;
+  private musicScheduleTimer: ReturnType<typeof setTimeout> | null = null;
+  private musicSources: AudioBufferSourceNode[] = [];
   private musicEnabled = true;
+  private musicVolume = 0.7;
+  private pendingMusic = false;
   private sfxEnabled = true;
   private audioUnlocked = false;
-  private readonly musicVolume = 0.35;
   private readonly sfxVolume = 0.32;
 
   isUnlocked(): boolean {
@@ -55,7 +59,7 @@ class ChiptuneEngine {
       this.masterGain.connect(this.ctx.destination);
 
       this.musicGain = this.ctx.createGain();
-      this.musicGain.gain.value = this.musicEnabled ? this.musicVolume : 0;
+      this.applyMusicGain();
       this.musicGain.connect(this.masterGain);
 
       this.sfxGain = this.ctx.createGain();
@@ -66,34 +70,62 @@ class ChiptuneEngine {
       await this.ctx.resume();
     }
     this.audioUnlocked = true;
+
     if (firstUnlock) {
-      this.flushPendingLoop();
+      await this.ensureMusicBuffer();
+      if (this.musicEnabled && this.pendingMusic) {
+        this.startMusic();
+      }
     }
   }
 
-  requestLoop(track: MusicTrack): void {
-    this.pendingTrack = track;
-    if (this.ctx && this.musicEnabled) {
-      this.startLoop(track);
-    }
+  startMusic(): void {
+    this.pendingMusic = true;
+    if (!this.ctx || !this.musicEnabled) return;
+
+    void this.ensureMusicBuffer().then(() => {
+      if (!this.ctx || !this.musicBuffer || !this.musicEnabled) return;
+      if (this.musicPlaying) return;
+
+      this.musicPlaying = true;
+      this.musicScheduledUntil = 0;
+      this.ensureMusicScheduled();
+    });
   }
 
-  flushPendingLoop(): void {
-    if (this.pendingTrack && this.ctx && this.musicEnabled) {
-      this.startLoop(this.pendingTrack);
+  stopMusic(): void {
+    this.pendingMusic = false;
+    this.musicPlaying = false;
+    this.musicScheduledUntil = 0;
+
+    if (this.musicScheduleTimer) {
+      clearTimeout(this.musicScheduleTimer);
+      this.musicScheduleTimer = null;
     }
+
+    for (const source of this.musicSources) {
+      try {
+        source.stop();
+      } catch {
+        /* already stopped */
+      }
+    }
+    this.musicSources = [];
   }
 
   setMusicEnabled(enabled: boolean): void {
     this.musicEnabled = enabled;
-    if (this.musicGain) {
-      this.musicGain.gain.value = enabled ? this.musicVolume : 0;
-    }
+    this.applyMusicGain();
     if (!enabled) {
-      this.stop();
-    } else if (this.pendingTrack && this.ctx) {
-      this.startLoop(this.pendingTrack);
+      this.stopMusic();
+    } else {
+      this.startMusic();
     }
+  }
+
+  setMusicVolume(volumePercent: number): void {
+    this.musicVolume = Math.max(0, Math.min(100, volumePercent)) / 100;
+    this.applyMusicGain();
   }
 
   setSfxEnabled(enabled: boolean): void {
@@ -103,66 +135,103 @@ class ChiptuneEngine {
     }
   }
 
-  startLoop(track: MusicTrack): void {
-    if (!this.ctx || !this.musicEnabled) return;
-    if (this.currentTrack === track && this.intervalId) return;
-
-    this.stop(false);
-    this.currentTrack = track;
-    this.pendingTrack = track;
-    this.step = 0;
-
-    const bpm = track === 'battle' ? 132 : 96;
-    const stepMs = (60 / bpm / 2) * 1000;
-
-    this.intervalId = setInterval(() => {
-      this.playMusicStep(track);
-      this.step += 1;
-    }, stepMs);
-  }
-
-  stop(clearTrack = true): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-    }
-    if (clearTrack) {
-      this.currentTrack = null;
-    }
-  }
-
   playSfx(type: SfxType): void {
     if (!this.sfxEnabled || !this.ctx || !this.sfxGain) return;
 
-    if (type === 'chip') {
-      this.playTone(NOTE.C5, 0.08, 'square', 0.15, this.sfxGain);
-      this.playTone(NOTE.G4, 0.1, 'square', 0.1, this.sfxGain, 0.04);
-    } else {
-      this.playTone(NOTE.Eb4, 0.12, 'sawtooth', 0.2, this.sfxGain);
-      this.playTone(NOTE.C4, 0.15, 'square', 0.18, this.sfxGain, 0.06);
-      this.playTone(NOTE.G3, 0.2, 'triangle', 0.12, this.sfxGain, 0.1);
+    switch (type) {
+      case 'chip':
+        this.playTone(NOTE.C5, 0.08, 'square', 0.15, this.sfxGain);
+        this.playTone(NOTE.G4, 0.1, 'square', 0.1, this.sfxGain, 0.04);
+        break;
+      case 'kill':
+        this.playTone(NOTE.Eb4, 0.12, 'sawtooth', 0.2, this.sfxGain);
+        this.playTone(NOTE.C4, 0.15, 'square', 0.18, this.sfxGain, 0.06);
+        this.playTone(NOTE.G3, 0.2, 'triangle', 0.12, this.sfxGain, 0.1);
+        break;
+      case 'coin':
+        this.playTone(NOTE.Bb5, 0.05, 'sine', 0.22, this.sfxGain);
+        this.playTone(NOTE.G5, 0.07, 'triangle', 0.16, this.sfxGain, 0.03);
+        this.playTone(NOTE.D6, 0.04, 'sine', 0.14, this.sfxGain, 0.055);
+        break;
     }
   }
 
-  private playMusicStep(track: MusicTrack): void {
-    if (!this.ctx || !this.musicGain) return;
+  private applyMusicGain(): void {
+    if (this.musicGain) {
+      this.musicGain.gain.value = this.musicEnabled ? this.musicVolume : 0;
+    }
+  }
 
-    const i = this.step % 8;
-    const bassPattern = track === 'battle' ? BATTLE_BASS : MENU_BASS;
-    const melodyPattern = track === 'battle' ? BATTLE_MELODY : MENU_ARP;
-
-    const bassNote = NOTE[bassPattern[i]];
-    const melodyNote = NOTE[melodyPattern[i]];
-
-    this.playTone(bassNote, 0.18, 'triangle', 0.35, this.musicGain);
-
-    if (this.step % 2 === 0 || track === 'battle') {
-      this.playTone(melodyNote, 0.12, 'square', track === 'battle' ? 0.2 : 0.14, this.musicGain, 0.02);
+  private async ensureMusicBuffer(): Promise<void> {
+    if (this.musicBuffer || !this.ctx) return;
+    if (this.musicLoading) {
+      await this.musicLoading;
+      return;
     }
 
-    if (track === 'battle' && i % 2 === 0) {
-      this.playTone(NOTE.C3, 0.06, 'square', 0.25, this.musicGain);
+    this.musicLoading = (async () => {
+      const response = await fetch(looplordMp3);
+      const arrayBuffer = await response.arrayBuffer();
+      this.musicBuffer = await this.ctx!.decodeAudioData(arrayBuffer);
+    })();
+
+    try {
+      await this.musicLoading;
+    } finally {
+      this.musicLoading = null;
     }
+  }
+
+  private ensureMusicScheduled(): void {
+    if (!this.ctx || !this.musicBuffer || !this.musicGain || !this.musicPlaying) return;
+
+    const duration = this.musicBuffer.duration;
+    const crossfade = Math.min(MUSIC_CROSSFADE_SEC, duration * 0.2);
+    const targetTime = this.ctx.currentTime + MUSIC_SCHEDULE_LOOKAHEAD_SEC;
+
+    while (this.musicScheduledUntil < targetTime) {
+      const startTime =
+        this.musicScheduledUntil === 0
+          ? this.ctx.currentTime + 0.08
+          : this.musicScheduledUntil;
+      this.scheduleMusicSegment(startTime, crossfade, duration);
+      this.musicScheduledUntil = startTime + duration - crossfade;
+    }
+
+    if (this.musicScheduleTimer) {
+      clearTimeout(this.musicScheduleTimer);
+    }
+    this.musicScheduleTimer = setTimeout(() => {
+      this.ensureMusicScheduled();
+    }, (MUSIC_SCHEDULE_LOOKAHEAD_SEC / 2) * 1000);
+  }
+
+  private scheduleMusicSegment(
+    startTime: number,
+    crossfade: number,
+    duration: number,
+  ): void {
+    if (!this.ctx || !this.musicBuffer || !this.musicGain) return;
+
+    const source = this.ctx.createBufferSource();
+    source.buffer = this.musicBuffer;
+    const gain = this.ctx.createGain();
+    source.connect(gain);
+    gain.connect(this.musicGain);
+
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(1, startTime + crossfade);
+    gain.gain.setValueAtTime(1, startTime + duration - crossfade);
+    gain.gain.linearRampToValueAtTime(0, startTime + duration);
+
+    source.start(startTime);
+    source.stop(startTime + duration + 0.05);
+
+    source.onended = () => {
+      this.musicSources = this.musicSources.filter((s) => s !== source);
+    };
+
+    this.musicSources.push(source);
   }
 
   private playTone(

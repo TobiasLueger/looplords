@@ -68,6 +68,7 @@ export interface ShopTicketOffer {
 
 export interface GameSettings {
   music: boolean;
+  musicVolume: number;
   sound: boolean;
   animations: boolean;
   difficulty: Difficulty;

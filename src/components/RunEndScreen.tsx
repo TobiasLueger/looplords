@@ -1,8 +1,10 @@
 import { getAchievementById } from '../game/achievements';
 import type { RunEndStats } from '../game/types';
-import { GameButton } from './ui/GameButton';
-import { RuinsPanel } from './ui/RuinsPanel';
+import { RUINS_UI } from '../utils/ruinsAssets';
 import { ScreenLayout } from './ui/ScreenLayout';
+import { StoneGroundSurface } from './ui/StoneGroundSurface';
+import { StoneMenuButton } from './ui/StoneMenuButton';
+import { StoneStatDisplay } from './ui/StoneStatDisplay';
 
 interface RunEndScreenProps {
   stats: RunEndStats;
@@ -10,6 +12,12 @@ interface RunEndScreenProps {
   onNewRun: () => void;
   onTitle: () => void;
 }
+
+const bodyTextShadow =
+  '0 0 6px rgba(0,0,0,0.95), 0 2px 4px rgba(0,0,0,0.85), 0 1px 0 rgba(0,0,0,1)';
+
+const sectionTitleShadow =
+  '0 0 6px rgba(0,0,0,0.95), 0 2px 4px rgba(0,0,0,0.85), 0 1px 0 rgba(0,0,0,1)';
 
 export function RunEndScreen({
   stats,
@@ -25,55 +33,82 @@ export function RunEndScreen({
     : stats.reason ?? 'Der Loop hat dich eingeholt';
 
   return (
-    <ScreenLayout title={title} subtitle={subtitle}>
-      <RuinsPanel className="mx-auto max-w-md space-y-5">
-        <div className="grid grid-cols-2 gap-4 text-center">
-          <div>
-            <p className="text-3xl font-bold text-loop-accent">{stats.round}</p>
-            <p className="text-sm text-loop-muted">Runden</p>
-          </div>
-          <div>
-            <p className="text-3xl font-bold text-loop-success">
-              {stats.enemiesDefeated}
-            </p>
-            <p className="text-sm text-loop-muted">Eliminierungen</p>
-          </div>
+    <ScreenLayout
+      title={title}
+      subtitle={subtitle}
+      titleIcon={stats.won ? RUINS_UI.star : RUINS_UI.sign}
+    >
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-3">
+        <div className="flex flex-wrap justify-center gap-3">
+          <StoneStatDisplay
+            icon={RUINS_UI.star}
+            label="Runden"
+            value={stats.round}
+          />
+          <StoneStatDisplay
+            icon={RUINS_UI.sign}
+            label="Eliminierungen"
+            value={stats.enemiesDefeated}
+            variant="default"
+          />
         </div>
 
-        <section>
-          <h2 className="mb-3 font-display text-lg text-loop-accent">
+        <StoneGroundSurface>
+          <p
+            className="px-4 pb-2 pt-3.5 font-display text-base font-bold text-white/95 sm:px-5 sm:text-lg"
+            style={{ textShadow: sectionTitleShadow }}
+          >
             Achievements
-          </h2>
+          </p>
           {newlyUnlockedIds.length === 0 ? (
-            <p className="text-sm text-loop-muted">
+            <p
+              className="px-4 pb-4 text-sm text-stone-200/90 sm:px-5 sm:pb-5 sm:text-base"
+              style={{ textShadow: bodyTextShadow }}
+            >
               Keine neuen Achievements in diesem Lauf.
             </p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="flex flex-col gap-2 px-3 pb-3 sm:px-4 sm:pb-4">
               {newlyUnlockedIds.map((id) => {
                 const def = getAchievementById(id);
                 if (!def) return null;
                 return (
-                  <li
-                    key={id}
-                    className="rounded-lg border border-loop-accent/40 bg-loop-accent/10 px-3 py-2"
-                  >
-                    <p className="font-semibold text-loop-accent">{def.name}</p>
-                    <p className="text-xs text-loop-muted">{def.description}</p>
+                  <li key={id}>
+                    <StoneGroundSurface variant="primary">
+                      <div className="px-4 py-3 sm:px-5 sm:py-3.5">
+                        <p
+                          className="font-display text-base font-bold text-loop-accentHover sm:text-lg"
+                          style={{ textShadow: sectionTitleShadow }}
+                        >
+                          {def.name}
+                        </p>
+                        <p
+                          className="mt-1 text-sm text-stone-200/90"
+                          style={{ textShadow: bodyTextShadow }}
+                        >
+                          {def.description}
+                        </p>
+                      </div>
+                    </StoneGroundSurface>
                   </li>
                 );
               })}
             </ul>
           )}
-        </section>
+        </StoneGroundSurface>
 
-        <div className="flex flex-col gap-3 pt-2">
-          <GameButton onClick={onNewRun}>Neuer Run</GameButton>
-          <GameButton variant="secondary" onClick={onTitle}>
-            Zum Titel
-          </GameButton>
-        </div>
-      </RuinsPanel>
+        <StoneMenuButton
+          variant="primary"
+          label="Neuer Run"
+          onClick={onNewRun}
+          className="w-full max-w-none"
+        />
+        <StoneMenuButton
+          label="Zum Titel"
+          onClick={onTitle}
+          className="w-full max-w-none"
+        />
+      </div>
     </ScreenLayout>
   );
 }
