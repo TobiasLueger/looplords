@@ -127,7 +127,7 @@ const SHOP_ABILITY_CHIPS: ShopChipTemplate[] = [
     id: 'grapple',
     name: 'Enterhaken-Chip',
     description: 'Bewege dich zum nächsten Gegner im Uhrzeigersinn (+ Lauf-Chips).',
-    price: 8,
+    price: 6,
     create: () => createChip(0, 'grapple'),
   },
   {

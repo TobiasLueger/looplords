@@ -1,4 +1,4 @@
-import { RUINS_BOARD } from '../utils/ruinsAssets';
+import { getPlayerSprite } from '../utils/assets';
 import { ScreenLayout } from './ui/ScreenLayout';
 import { StoneMenuButton } from './ui/StoneMenuButton';
 
@@ -8,6 +8,15 @@ interface TitleScreenProps {
   onHowToPlay: () => void;
   onAchievements: () => void;
 }
+
+const playerOutlineFilter = [
+  'drop-shadow(0 0 0.5px #fff)',
+  'drop-shadow(1px 0 0 #fff)',
+  'drop-shadow(-1px 0 0 #fff)',
+  'drop-shadow(0 1px 0 #fff)',
+  'drop-shadow(0 -1px 0 #fff)',
+  'drop-shadow(0 4px 12px rgba(0,0,0,0.6))',
+].join(' ');
 
 export function TitleScreen({
   onStart,
@@ -20,9 +29,10 @@ export function TitleScreen({
       <div className="flex flex-col items-center justify-center gap-10 py-12">
         <div className="text-center">
           <img
-            src={RUINS_BOARD.centerRuinsAlt}
-            alt=""
-            className="mx-auto mb-4 max-h-32 w-auto object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)] sm:max-h-40"
+            src={getPlayerSprite() ?? undefined}
+            alt="Looplord"
+            className="mx-auto mb-4 max-h-36 w-auto object-contain sm:max-h-44"
+            style={{ filter: playerOutlineFilter }}
             draggable={false}
           />
           <h1 className="font-display text-5xl font-bold tracking-widest text-loop-accent drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] sm:text-6xl">
