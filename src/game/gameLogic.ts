@@ -900,25 +900,35 @@ export function openEndlessShop(state: RunState): RunState {
 
 export function discardAndRedraw(state: RunState): RunState {
   if (state.discardsRemaining <= 0) return state;
-  if (state.hand.length === 0) return state;
+  if (state.selectedChipIds.length === 0) return state;
 
-  const handSize = getHandSize(state.upgradeIds);
-  const playedThisRound = [...state.playedThisRound, ...state.hand];
-  const drawn = drawFromDeckOnly(state.deck, handSize);
+  const selectedSet = new Set(state.selectedChipIds);
+  const toDiscard = state.hand.filter((c) => selectedSet.has(c.id));
+  if (toDiscard.length === 0) return state;
+
+  const keptHand = state.hand.filter((c) => !selectedSet.has(c.id));
+  const drawn = drawFromDeckOnly(state.deck, toDiscard.length);
+
+  const discardCount = toDiscard.length;
+  const drawCount = drawn.hand.length;
+
+  let logMessage: string;
+  if (drawCount === 0) {
+    logMessage = `${discardCount} Chip(s) abgeworfen — Beutel leer.`;
+  } else if (drawCount === discardCount) {
+    logMessage = `${discardCount} Chip(s) abgeworfen und neu gezogen.`;
+  } else {
+    logMessage = `${discardCount} abgeworfen, ${drawCount} nachgezogen.`;
+  }
 
   return {
     ...state,
     discardsRemaining: state.discardsRemaining - 1,
-    playedThisRound,
-    hand: drawn.hand,
+    playedThisRound: [...state.playedThisRound, ...toDiscard],
+    hand: [...keptHand, ...drawn.hand],
     deck: drawn.deck,
     selectedChipIds: [],
-    eventLog: addLog(
-      state,
-      drawn.hand.length > 0
-        ? 'Hand abgeworfen und neu gezogen.'
-        : 'Hand abgeworfen — Beutel leer.',
-    ),
+    eventLog: addLog(state, logMessage),
   };
 }
 

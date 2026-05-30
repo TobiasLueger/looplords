@@ -231,9 +231,13 @@ export function GameScreen({
                 />
                 <SpriteGameButton
                   icon={RUINS_ACTIONS.discardRedraw}
-                  label="Abwerfen / Neu ziehen"
+                  label="Auswahl abwerfen"
                   onClick={onDiscard}
-                  disabled={isBoardAnimating || run.discardsRemaining <= 0}
+                  disabled={
+                    isBoardAnimating ||
+                    run.discardsRemaining <= 0 ||
+                    run.selectedChipIds.length === 0
+                  }
                 />
                 <SpriteGameButton
                   icon={RUINS_ACTIONS.endTurn}
