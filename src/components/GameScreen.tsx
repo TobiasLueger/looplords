@@ -11,9 +11,10 @@ import { ChipBagModal } from './ChipBagModal';
 import { ChipHand } from './ChipHand';
 import { EventLog } from './EventLog';
 import { InstantTicketsPanel } from './InstantTicketsPanel';
-import { StatIcon } from './StatIcon';
 import { RuinsPanel } from './ui/RuinsPanel';
 import { SpriteGameButton } from './ui/SpriteGameButton';
+import { StoneMenuButton } from './ui/StoneMenuButton';
+import { StoneStatDisplay } from './ui/StoneStatDisplay';
 
 interface GameScreenProps {
   run: RunState;
@@ -109,27 +110,43 @@ export function GameScreen({
               Ziel: alle Gegner eliminieren
             </p>
           </div>
-          <div className="flex flex-wrap items-start gap-2">
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              className="rounded-lg border border-loop-border bg-loop-panel/80 px-3 py-2 text-sm text-loop-muted transition hover:border-loop-muted hover:text-white"
-              aria-label="Einstellungen"
-              title="Einstellungen"
-            >
-              ⚙
-            </button>
-            <div className="flex flex-wrap gap-2">
-              <StatIcon
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+            <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+              <StoneStatDisplay
                 icon={RUINS_UI.coin}
                 label="Gold"
                 value={run.gold}
-                valueClassName="text-loop-accent"
+                variant="primary"
+                size="compact"
               />
-              <StatIcon icon={RUINS_UI.star} label="Züge" value={run.turnsRemaining} />
-              <StatIcon icon={RUINS_UI.sign} label="Abwürfe" value={run.discardsRemaining} />
-              <StatIcon icon={RUINS_UI.sign} label="Gegner" value={run.enemies.length} />
+              <StoneStatDisplay
+                icon={RUINS_UI.star}
+                label="Züge"
+                value={run.turnsRemaining}
+                variant="default"
+                size="compact"
+              />
+              <StoneStatDisplay
+                icon={RUINS_ACTIONS.discardRedraw}
+                label="Abwürfe"
+                value={run.discardsRemaining}
+                variant="default"
+                size="compact"
+              />
+              <StoneStatDisplay
+                icon={RUINS_UI.sword}
+                label="Gegner"
+                value={run.enemies.length}
+                variant="default"
+                size="compact"
+                iconClassName="origin-center scale-[1.5] -rotate-45"
+              />
             </div>
+            <StoneMenuButton
+              label="Einstellungen"
+              onClick={onOpenSettings}
+              className="h-[3.25rem] w-auto max-w-none shrink-0 sm:h-14 sm:max-w-none"
+            />
           </div>
         </header>
 

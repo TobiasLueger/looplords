@@ -72,20 +72,21 @@ export function ShopScreen({
       subtitle={`Runde ${run.round} geschafft — gib dein Gold aus`}
       titleIcon={RUINS_UI.chest}
     >
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <StoneStatDisplay
             icon={RUINS_UI.coin}
             label="Gold"
             value={run.gold}
             variant="primary"
+            size="compact"
           />
           <StoneBagIconButton onClick={() => setShowBag(true)} />
         </div>
         <StoneMenuButton
           label="Einstellungen"
           onClick={onOpenSettings}
-          className="w-auto max-w-none shrink-0 sm:max-w-none"
+          className="h-[3.25rem] w-auto max-w-none shrink-0 sm:h-14 sm:max-w-none"
         />
       </div>
 

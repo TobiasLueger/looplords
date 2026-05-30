@@ -20,6 +20,7 @@ import key from '../../assets/ruins/key.png';
 import star from '../../assets/ruins/star.png';
 import barrel from '../../assets/ruins/wooden-barrel.png';
 import signEnd from '../../assets/ruins/sign-03.png';
+import sword from '../../assets/ruins/sword.png';
 
 export const RUINS_BACKGROUNDS = {
   game: bgGame,
@@ -41,6 +42,7 @@ export const RUINS_UI = {
   chest,
   star,
   sign,
+  sword,
   panelBox,
   decorBrick,
 } as const;
