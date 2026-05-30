@@ -46,6 +46,21 @@ export function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+/** Alle Chips des Runs über alle Stapel (Beutel, Hand, Ablage, diese Runde gespielt). */
+export function getAllChipsInPiles(piles: {
+  deck: Chip[];
+  discard: Chip[];
+  playedThisRound: Chip[];
+  hand: Chip[];
+}): Chip[] {
+  return [
+    ...piles.deck,
+    ...piles.discard,
+    ...piles.playedThisRound,
+    ...piles.hand,
+  ];
+}
+
 export function prepareRoundDeck(
   upgradeIds: string[],
   piles: {
@@ -55,12 +70,7 @@ export function prepareRoundDeck(
     hand: Chip[];
   },
 ): Chip[] {
-  const existing = [
-    ...piles.deck,
-    ...piles.discard,
-    ...piles.playedThisRound,
-    ...piles.hand,
-  ];
+  const existing = getAllChipsInPiles(piles);
   if (existing.length === 0) {
     return buildStartingDeck(upgradeIds);
   }

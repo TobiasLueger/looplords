@@ -6,6 +6,7 @@ interface StoneStatDisplayProps {
   value: number | string;
   variant?: 'primary' | 'default';
   className?: string;
+  onClick?: () => void;
 }
 
 export function StoneStatDisplay({
@@ -14,17 +15,13 @@ export function StoneStatDisplay({
   value,
   variant = 'primary',
   className = '',
+  onClick,
 }: StoneStatDisplayProps) {
   const valueClass =
     variant === 'primary' ? 'text-loop-accentHover' : 'text-white/95';
 
-  return (
-    <div
-      className={`stone-menu-btn stone-stat-display relative inline-flex w-auto max-w-none items-center justify-center ${
-        variant === 'primary' ? 'stone-menu-btn-primary' : ''
-      } ${className}`}
-      aria-label={`${label}: ${value}`}
-    >
+  const inner = (
+    <>
       <span
         aria-hidden
         className={`stone-menu-btn__tiles absolute inset-0 ${
@@ -57,6 +54,29 @@ export function StoneStatDisplay({
           </span>
         </span>
       </span>
+    </>
+  );
+
+  const baseClass = `stone-menu-btn stone-stat-display relative inline-flex w-auto max-w-none items-center justify-center ${
+    variant === 'primary' ? 'stone-menu-btn-primary' : ''
+  } ${onClick ? 'cursor-pointer transition duration-200 hover:scale-[1.04] active:scale-[0.97]' : ''} ${className}`;
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`${baseClass} border-0 bg-transparent p-0`}
+        aria-label={`${label}: ${value}`}
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return (
+    <div className={baseClass} aria-label={`${label}: ${value}`}>
+      {inner}
     </div>
   );
 }

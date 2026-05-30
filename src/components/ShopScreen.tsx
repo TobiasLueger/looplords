@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { UpgradeDefinition } from '../game/upgrades';
 import { UPGRADES } from '../game/upgrades';
 import type { RunState } from '../game/types';
@@ -6,8 +7,10 @@ import { getShopRerollCost } from '../game/shop';
 import { RUINS_UI } from '../utils/ruinsAssets';
 import { INSTANT_TICKET_DEFS } from '../game/instantTickets';
 import { InstantTicketCard } from './InstantTicketCard';
+import { ChipBagModal } from './ChipBagModal';
 import { ShopChipOffer as ShopChipOfferCard } from './ShopChipOffer';
 import { ScreenLayout } from './ui/ScreenLayout';
+import { StoneBagIconButton } from './ui/StoneBagIconButton';
 import { StoneMenuButton } from './ui/StoneMenuButton';
 import { StoneStatDisplay } from './ui/StoneStatDisplay';
 
@@ -30,6 +33,7 @@ export function ShopScreen({
   onOpenSettings,
   onBuyInstantTicket,
 }: ShopScreenProps) {
+  const [showBag, setShowBag] = useState(false);
   const pickingUpgrade = run.pendingUpgradeOptions.length > 0;
   const rerollCost = getShopRerollCost(run.shopRerollsUsed);
   const upgradeOptions = run.pendingUpgradeOptions
@@ -69,12 +73,15 @@ export function ShopScreen({
       titleIcon={RUINS_UI.chest}
     >
       <div className="mb-6 flex items-start justify-between gap-4">
-        <StoneStatDisplay
-          icon={RUINS_UI.coin}
-          label="Gold"
-          value={run.gold}
-          variant="primary"
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <StoneStatDisplay
+            icon={RUINS_UI.coin}
+            label="Gold"
+            value={run.gold}
+            variant="primary"
+          />
+          <StoneBagIconButton onClick={() => setShowBag(true)} />
+        </div>
         <StoneMenuButton
           label="Einstellungen"
           onClick={onOpenSettings}
@@ -147,6 +154,14 @@ export function ShopScreen({
       <div className="mt-10 flex justify-start">
         <StoneMenuButton variant="primary" label="Weiter — nächste Runde" onClick={onLeave} />
       </div>
+
+      {showBag && (
+        <ChipBagModal
+          run={run}
+          context="shop"
+          onClose={() => setShowBag(false)}
+        />
+      )}
     </ScreenLayout>
   );
 }
