@@ -72,6 +72,75 @@ export function chipTypeLabel(chip: Chip): string {
   }
 }
 
+const STEP_CHIP_NAMES: Record<number, string> = {
+  1: 'Einer-Chip',
+  2: 'Zweier-Chip',
+  3: 'Dreier-Chip',
+  4: 'Vierer-Chip',
+  5: 'Fünfer-Chip',
+  6: 'Sechser-Chip',
+};
+
+export function chipName(chip: Chip): string {
+  switch (chip.special) {
+    case 'teleport':
+      return 'Riss-Chip';
+    case 'overcharge':
+      return 'Überladung';
+    case 'echo':
+      return 'Echo-Chip';
+    case 'scout':
+      return 'Späher-Chip';
+    case 'nova':
+      return 'Nova-Chip';
+    case 'retreat':
+      return 'Rückzug-Chip';
+    case 'dash':
+      return 'Sturm-Chip';
+    case 'leap':
+      return 'Sprung-Chip';
+    case 'pierce':
+      return 'Durchstoß-Chip';
+    case 'cleave':
+      return 'Spalt-Chip';
+    case 'grapple':
+      return 'Enterhaken-Chip';
+    default:
+      return STEP_CHIP_NAMES[chip.value] ?? `${chip.value}er-Chip`;
+  }
+}
+
+export function chipDescription(chip: Chip): string {
+  switch (chip.special) {
+    case 'teleport':
+      return 'Teleport: springe halbe Runde vor.';
+    case 'overcharge':
+      return 'Verdoppelt die Schritte der gleichzeitig gespielten Lauf-Chips.';
+    case 'echo':
+      return 'Nach dem Zug: ziehe 1 Chip mehr aus dem Beutel.';
+    case 'scout':
+      return 'Nach dem Zug: ziehe 2 Chips mehr aus dem Beutel.';
+    case 'nova':
+      return 'Alle Gegner verlieren 1 Treffer.';
+    case 'retreat':
+      return 'Bewege dich 2 Felder gegen den Uhrzeigersinn.';
+    case 'dash':
+      return 'Bewege dich 3 Felder gegen den Uhrzeigersinn.';
+    case 'leap':
+      return 'Bewege dich 4 Felder gegen den Uhrzeigersinn.';
+    case 'pierce':
+      return 'Trifft jeden Gegner auf den Feldern entlang deiner Bewegung.';
+    case 'cleave':
+      return 'Trifft nach der Landung den nächsten Gegner im Uhrzeigersinn.';
+    case 'grapple':
+      return 'Bewege dich zum nächsten Gegner im Uhrzeigersinn (+ Lauf-Chips).';
+    default: {
+      const n = chip.value;
+      return `Bewege dich ${n} Feld${n === 1 ? '' : 'er'} im Uhrzeigersinn.`;
+    }
+  }
+}
+
 /** CSS filter string to tint chip.png per chip type/value */
 export function chipImageFilter(chip: Chip): string {
   const base = 'drop-shadow(0 2px 4px rgba(0,0,0,0.45))';

@@ -3,6 +3,7 @@ import type { Chip, RunState } from '../game/types';
 import { getAllChipsInPiles } from '../game/deck';
 import { INSTANT_TICKET_DEFS } from '../game/instantTickets';
 import { totalInstantTickets } from '../game/instantTickets';
+import { ChipInspectable } from './ChipInspectable';
 import { ChipSprite } from './ChipSprite';
 import { StoneGroundSurface } from './ui/StoneGroundSurface';
 import { StoneMenuButton } from './ui/StoneMenuButton';
@@ -119,14 +120,19 @@ export function ChipBagModal({
                     Keine Chips im Besitz.
                   </p>
                 ) : (
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <div className="mt-2 flex flex-wrap gap-2 overflow-visible">
                     {ownedChips.map((chip) => (
-                      <ChipSprite
+                      <ChipInspectable
                         key={chip.id}
                         chip={chip}
-                        size="sm"
-                        showTypeLabel={false}
-                      />
+                        overlayMode="portal"
+                      >
+                        <ChipSprite
+                          chip={chip}
+                          size="sm"
+                          showTypeLabel={false}
+                        />
+                      </ChipInspectable>
                     ))}
                   </div>
                 )}
@@ -148,7 +154,7 @@ export function ChipBagModal({
                       Beutel ist leer.
                     </p>
                   ) : (
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className="mt-2 flex flex-wrap gap-2 overflow-visible">
                       {bagChips.map((chip) => (
                         <ChipBadge key={chip.id} chip={chip} variant="bag" />
                       ))}
@@ -164,7 +170,7 @@ export function ChipBagModal({
                     >
                       In der Hand
                     </h3>
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className="mt-2 flex flex-wrap gap-2 overflow-visible">
                       {handChips.map((chip) => (
                         <ChipBadge key={chip.id} chip={chip} variant="hand" />
                       ))}
@@ -180,7 +186,7 @@ export function ChipBagModal({
                     >
                       Diese Runde gespielt
                     </h3>
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className="mt-2 flex flex-wrap gap-2 overflow-visible">
                       {playedChips.map((chip) => (
                         <ChipBadge key={chip.id} chip={chip} variant="played" />
                       ))}
@@ -257,18 +263,20 @@ function ChipBadge({
   variant: 'bag' | 'hand' | 'played';
 }) {
   return (
-    <ChipSprite
-      chip={chip}
-      size="sm"
-      showTypeLabel={false}
-      dimmed={variant === 'played'}
-      className={
-        variant === 'played'
-          ? 'opacity-60 grayscale-[0.35]'
-          : variant === 'hand'
-            ? 'ring-1 ring-loop-accent/50'
-            : ''
-      }
-    />
+    <ChipInspectable chip={chip} overlayMode="portal">
+      <ChipSprite
+        chip={chip}
+        size="sm"
+        showTypeLabel={false}
+        dimmed={variant === 'played'}
+        className={
+          variant === 'played'
+            ? 'opacity-60 grayscale-[0.35]'
+            : variant === 'hand'
+              ? 'ring-1 ring-loop-accent/50'
+              : ''
+        }
+      />
+    </ChipInspectable>
   );
 }

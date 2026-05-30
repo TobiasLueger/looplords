@@ -1,4 +1,5 @@
 import type { Chip } from '../game/types';
+import { ChipInspectable } from './ChipInspectable';
 import { ChipSprite } from './ChipSprite';
 import { RuinsPanel } from './ui/RuinsPanel';
 
@@ -15,18 +16,19 @@ export function ChipHand({ hand, selectedIds, onToggle, animations }: ChipHandPr
       <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-loop-muted">
         Hand — Movement-Chips
       </h3>
-      <div className="flex flex-wrap justify-center gap-3">
+      <div className="flex flex-wrap justify-center gap-3 overflow-visible">
         {hand.map((chip) => {
           const selected = selectedIds.includes(chip.id);
           return (
-            <ChipSprite
-              key={chip.id}
-              chip={chip}
-              selected={selected}
-              animations={animations}
-              as="button"
-              onClick={() => onToggle(chip.id)}
-            />
+            <ChipInspectable key={chip.id} chip={chip}>
+              <ChipSprite
+                chip={chip}
+                selected={selected}
+                animations={animations}
+                as="button"
+                onClick={() => onToggle(chip.id)}
+              />
+            </ChipInspectable>
           );
         })}
         {hand.length === 0 && (
