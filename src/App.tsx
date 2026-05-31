@@ -8,6 +8,7 @@ import { RunSetupScreen } from './components/RunSetupScreen';
 import { SettingsScreen } from './components/SettingsScreen';
 import { ShopScreen } from './components/ShopScreen';
 import { TitleScreen } from './components/TitleScreen';
+import { DevToolsPanel } from './components/dev/DevToolsPanel';
 import type { Screen } from './game/types';
 import { useGameAudio } from './hooks/useGameAudio';
 import { useGameState } from './hooks/useGameState';
@@ -71,6 +72,7 @@ export default function App() {
     hasUtilityChipSelected,
     runEndStats,
     newlyUnlockedIds,
+    devTools,
   } = useGameState();
 
   useGameAudio(screen, settings);
@@ -82,9 +84,11 @@ export default function App() {
     fn();
   };
 
+  let content: React.ReactNode;
+
   switch (screen) {
     case 'title':
-      return (
+      content = (
         <TitleScreen
           onStart={() => void unlockAnd(() => setScreen('runSetup'))}
           onSettings={() => void unlockAnd(() => openSettings('title'))}
@@ -92,17 +96,19 @@ export default function App() {
           onAchievements={() => void unlockAnd(openAchievements)}
         />
       );
+      break;
 
     case 'runSetup':
-      return (
+      content = (
         <RunSetupScreen
           onBegin={() => void unlockAnd(beginRun)}
           onBack={goToTitle}
         />
       );
+      break;
 
     case 'settings':
-      return (
+      content = (
         <SettingsScreen
           settings={settings}
           onUpdate={updateSettings}
@@ -113,26 +119,28 @@ export default function App() {
           onRestartRun={restartRun}
         />
       );
+      break;
 
     case 'howToPlay':
-      return <HowToPlayScreen onBack={goToTitle} />;
+      content = <HowToPlayScreen onBack={goToTitle} />;
+      break;
 
     case 'achievements':
-      return <AchievementsScreen onBack={goToTitle} />;
+      content = <AchievementsScreen onBack={goToTitle} />;
+      break;
 
     case 'endlessChoice':
-      if (!run) return null;
-      return (
+      content = !run ? null : (
         <EndlessChoiceScreen
           run={run}
           onChooseEndless={handleChooseEndless}
           onEndRun={handleChooseEndRun}
         />
       );
+      break;
 
     case 'runEnd':
-      if (!runEndStats) return null;
-      return (
+      content = !runEndStats ? null : (
         <RunEndScreen
           stats={runEndStats}
           newlyUnlockedIds={newlyUnlockedIds}
@@ -142,10 +150,10 @@ export default function App() {
           onTitle={goToTitle}
         />
       );
+      break;
 
     case 'game':
-      if (!run) return null;
-      return (
+      content = !run ? null : (
         <GameScreen
           run={run}
           settings={settings}
@@ -175,10 +183,10 @@ export default function App() {
           isBoardAnimating={isBoardAnimating}
         />
       );
+      break;
 
     case 'shop':
-      if (!run) return null;
-      return (
+      content = !run ? null : (
         <ShopScreen
           run={run}
           onBuyChip={handleBuyShopChip}
@@ -189,8 +197,24 @@ export default function App() {
           onBuyInstantTicket={handleBuyInstantTicket}
         />
       );
+      break;
 
     default:
-      return null;
+      content = null;
   }
+
+  return (
+    <>
+      {content}
+      {devTools && (
+        <DevToolsPanel
+          api={devTools}
+          screen={screen}
+          run={run}
+          settings={settings}
+          updateSettings={updateSettings}
+        />
+      )}
+    </>
+  );
 }

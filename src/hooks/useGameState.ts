@@ -32,6 +32,8 @@ import {
 } from '../game/shopActions';
 import type { GameSettings } from '../game/types';
 import { chiptune } from '../audio/chiptuneEngine';
+import { DEV_TOOLS_ENABLED } from '../config/devTools';
+import { useDevToolsApi } from './useDevToolsApi';
 
 const SETTINGS_KEY = 'looplords-settings';
 
@@ -533,6 +535,26 @@ export function useGameState() {
     cleaveThrowAnim !== null ||
     novaBlastAnim !== null;
 
+  const devTools = useDevToolsApi({
+    enabled: DEV_TOOLS_ENABLED,
+    run,
+    setRun,
+    setScreen,
+    setRunEndStats,
+    setNewlyUnlockedIds,
+    beginRun,
+    clearPendingMove,
+    finishRun,
+    setPlayerMoveAnim,
+    setSniperShotAnim,
+    setCleaveThrowAnim,
+    setNovaBlastAnim,
+    moveAnimTokenRef,
+    sniperAnimTokenRef,
+    cleaveAnimTokenRef,
+    novaAnimTokenRef,
+  });
+
   return {
     screen,
     setScreen,
@@ -578,5 +600,6 @@ export function useGameState() {
     hasUtilityChipSelected,
     runEndStats,
     newlyUnlockedIds,
+    devTools,
   };
 }
