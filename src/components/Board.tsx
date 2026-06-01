@@ -16,6 +16,8 @@ import {
 import { RUINS_BACKGROUNDS, RUINS_BOARD } from '../utils/ruinsAssets';
 import { BoardCell } from './BoardCell';
 import { BoardProjectile } from './BoardProjectile';
+import { BoardGrappleLine } from './BoardGrappleLine';
+import { BoardSmokePuff } from './BoardSmokePuff';
 import { EntitySprite } from './EntitySprite';
 
 const BOARD_COORD_SIZE = 200;
@@ -69,8 +71,17 @@ export function Board({
     return cells;
   }, [run.boardSize]);
 
-  const { displayCell, isAnimating, splatterCells, defeatedEnemyCells } =
-    usePlayerHopAnimation(
+  const {
+    displayCell,
+    isAnimating,
+    splatterCells,
+    defeatedEnemyCells,
+    teleportSmokeCells,
+    playerVisible,
+    instantPosition,
+    playerAnimMode,
+    grapplePull,
+  } = usePlayerHopAnimation(
     run.playerPosition,
     run.boardSize,
     playerMoveRequest,
@@ -95,13 +106,16 @@ export function Board({
       onCleaveImpact,
     );
 
-  const { activeSplatterCells: novaSplatterCells, defeatedCells: novaDefeatedCells } =
-    useNovaBlastAnimation(
-      novaBlastRequest,
-      animations,
-      onNovaBlastComplete,
-      onNovaImpact,
-    );
+  const {
+    phase: novaPhase,
+    activeSplatterCells: novaSplatterCells,
+    defeatedCells: novaDefeatedCells,
+  } = useNovaBlastAnimation(
+    novaBlastRequest,
+    animations,
+    onNovaBlastComplete,
+    onNovaImpact,
+  );
 
   const defeatedEnemyCellSet = useMemo(() => {
     const set = new Set(defeatedEnemyCells);
@@ -121,10 +135,61 @@ export function Board({
     return set;
   }, [splatterCells, novaSplatterCells, sniperSplatterCell, cleaveSplatterCell]);
 
+  const teleportSmokeSet = useMemo(
+    () => new Set(teleportSmokeCells),
+    [teleportSmokeCells],
+  );
+
+  const playerMotionClass =
+    playerAnimMode === 'strike'
+      ? 'animate-player-strike'
+      : playerAnimMode === 'vanish'
+        ? 'animate-teleport-vanish'
+        : playerAnimMode === 'appear'
+          ? 'animate-teleport-appear'
+          : playerAnimMode === 'hop'
+            ? 'animate-player-hop'
+            : playerAnimMode === 'grapple'
+              ? 'animate-player-grapple'
+              : '';
+
   const animatedPlayerPos = cellPositions.find((c) => c.index === displayCell);
+
+  const playerBoardCoords = useMemo(() => {
+    if (!grapplePull) {
+      return animatedPlayerPos ?? null;
+    }
+    const from = cellPositions.find((c) => c.index === grapplePull.fromCell);
+    const to = cellPositions.find((c) => c.index === grapplePull.toCell);
+    if (!from || !to) return animatedPlayerPos ?? null;
+    const t = grapplePull.progress;
+    return {
+      index: displayCell,
+      x: from.x + (to.x - from.x) * t,
+      y: from.y + (to.y - from.y) * t,
+    };
+  }, [animatedPlayerPos, cellPositions, displayCell, grapplePull]);
+
+  const grappleAnchorPos = useMemo(() => {
+    if (!grapplePull) return null;
+    return cellPositions.find((c) => c.index === grapplePull.toCell) ?? null;
+  }, [cellPositions, grapplePull]);
+
+  const grappleLeanDeg = useMemo(() => {
+    if (!grapplePull || !playerBoardCoords || !grappleAnchorPos) return 0;
+    return (
+      (Math.atan2(
+        grappleAnchorPos.y - playerBoardCoords.y,
+        grappleAnchorPos.x - playerBoardCoords.x,
+      ) *
+        180) /
+      Math.PI
+    );
+  }, [grappleAnchorPos, grapplePull, playerBoardCoords]);
+
   const cellSizePercent = Math.max(10, Math.min(18, 130 / run.boardSize));
   const showAnimatedPlayer =
-    animatedPlayerPos &&
+    playerBoardCoords &&
     (isAnimating || playerMoveRequest !== null || cleaveThrowRequest !== null);
 
   const sniperFrom = sniperShotRequest
@@ -139,6 +204,10 @@ export function Board({
     : null;
   const cleaveTo = cleaveThrowRequest
     ? cellPositions.find((c) => c.index === cleaveThrowRequest.toCell)
+    : null;
+
+  const novaFrom = novaBlastRequest
+    ? cellPositions.find((c) => c.index === novaBlastRequest.fromCell)
     : null;
 
   return (
@@ -212,6 +281,7 @@ export function Board({
                 upgradeIds={run.upgradeIds}
                 run={run}
               />
+              {teleportSmokeSet.has(index) && <BoardSmokePuff />}
             </div>
           );
         })}
@@ -241,23 +311,64 @@ export function Board({
         />
       )}
 
+      {novaFrom &&
+        novaBlastRequest &&
+        novaPhase === 'flight' &&
+        novaBlastRequest.targetCells.map((targetCell) => {
+          const targetPos = cellPositions.find((c) => c.index === targetCell);
+          if (!targetPos) return null;
+          return (
+            <BoardProjectile
+              key={`nova-${targetCell}`}
+              kind="lightning"
+              fromX={novaFrom.x}
+              fromY={novaFrom.y}
+              toX={targetPos.x}
+              toY={targetPos.y}
+              boardCoordSize={BOARD_COORD_SIZE}
+              active
+            />
+          );
+        })}
+
+      {grapplePull && grappleAnchorPos && playerBoardCoords && (
+        <BoardGrappleLine
+          anchorX={grappleAnchorPos.x}
+          anchorY={grappleAnchorPos.y}
+          playerX={playerBoardCoords.x}
+          playerY={playerBoardCoords.y}
+        />
+      )}
+
       {showAnimatedPlayer && (
         <div
-          className="pointer-events-none absolute z-[30] -translate-x-1/2 -translate-y-1/2 transition-[left,top] duration-[190ms] ease-out"
+          className={`pointer-events-none absolute z-[30] -translate-x-1/2 -translate-y-1/2 ${
+            instantPosition || grapplePull
+              ? ''
+              : 'transition-[left,top] duration-[190ms] ease-out'
+          }`}
           style={{
-            left: `${(animatedPlayerPos.x / BOARD_COORD_SIZE) * 100}%`,
-            top: `${(animatedPlayerPos.y / BOARD_COORD_SIZE) * 100}%`,
+            left: `${(playerBoardCoords.x / BOARD_COORD_SIZE) * 100}%`,
+            top: `${(playerBoardCoords.y / BOARD_COORD_SIZE) * 100}%`,
             width: `${cellSizePercent}%`,
             maxWidth: '5.5rem',
           }}
         >
           <div
-            key={displayCell}
-            className={`flex items-center justify-center ${
-              splatterCells.length > 0 ? 'animate-player-strike' : 'animate-player-hop'
-            }`}
+            className="flex items-center justify-center"
+            style={
+              grapplePull
+                ? { transform: `rotate(${grappleLeanDeg + 90}deg)` }
+                : undefined
+            }
           >
-            <EntitySprite kind="player" size="xl" animate={false} />
+            <div
+              className={`flex items-center justify-center ${playerMotionClass} ${
+                playerVisible ? '' : 'invisible opacity-0'
+              }`}
+            >
+              <EntitySprite kind="player" size="xl" animate={false} />
+            </div>
           </div>
         </div>
       )}

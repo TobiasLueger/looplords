@@ -25,6 +25,13 @@ import {
   grantFreeInstantTicket,
 } from './instantTickets';
 import { getGoldForEnemyType, openShopState, resetShopOfferIdCounter } from './shop';
+import { selectionHasMovementChip } from './chipDisplay';
+import {
+  grappleSegment,
+  hopSegment,
+  teleportSegment,
+  type PlayerMoveSegment,
+} from './playerMovement';
 import {
   getBonusDiscards,
   getBonusLives,
@@ -588,9 +595,48 @@ export function toggleChipSelection(state: RunState, chipId: string): RunState {
   return { ...state, selectedChipIds: selected };
 }
 
+export function canPlaySelectedChips(state: RunState): boolean {
+  if (state.selectedChipIds.length === 0 || state.turnsRemaining <= 0) {
+    return false;
+  }
+
+  const {
+    steps,
+    hasTeleport,
+    extraDraw,
+    hasNova,
+    hasPierce,
+    hasCleave,
+    hasGrapple,
+  } = calculateChipMovement(
+    state.hand,
+    state.selectedChipIds,
+    state.firstChipDoubledUsed,
+    state.upgradeIds,
+  );
+
+  if (hasGrapple && state.enemies.length === 0) return false;
+
+  if (
+    (hasPierce || hasCleave) &&
+    !selectionHasMovementChip(state.hand, state.selectedChipIds)
+  ) {
+    return false;
+  }
+
+  return (
+    steps !== 0 ||
+    hasTeleport ||
+    extraDraw > 0 ||
+    hasNova ||
+    hasGrapple
+  );
+}
+
 export function playChips(state: RunState): RunState {
   if (state.selectedChipIds.length === 0) return state;
   if (state.turnsRemaining <= 0) return state;
+  if (!canPlaySelectedChips(state)) return state;
 
   const {
     steps,
@@ -607,16 +653,6 @@ export function playChips(state: RunState): RunState {
     false,
     state.upgradeIds,
   );
-
-  const canPlay =
-    steps !== 0 ||
-    hasTeleport ||
-    extraDraw > 0 ||
-    hasNova ||
-    hasGrapple ||
-    (hasPierce && (steps !== 0 || hasGrapple || hasTeleport)) ||
-    (hasCleave && (steps !== 0 || hasGrapple || hasTeleport));
-  if (!canPlay) return state;
 
   if (hasGrapple && state.enemies.length === 0) {
     return state;
@@ -638,11 +674,11 @@ export function playChips(state: RunState): RunState {
     next.eventLog = addLog(next, 'Nova-Chip: alle Gegner -1 Treffer.');
   }
 
-  const moveSegments: number[] = [];
+  const moveSegments: PlayerMoveSegment[] = [];
 
   if (hasTeleport) {
     const teleportSteps = Math.floor(next.boardSize / 2);
-    moveSegments.push(teleportSteps);
+    moveSegments.push(teleportSegment(teleportSteps));
     next.playerPosition = moveClockwise(
       next.playerPosition,
       teleportSteps,
@@ -651,7 +687,42 @@ export function playChips(state: RunState): RunState {
     next.eventLog = addLog(next, `Teleport! +${teleportSteps} Felder.`);
   }
 
-  let moveSteps = steps;
+  let playerMoved = hasTeleport;
+  let pierceLogged = false;
+
+  const applyHop = (hopSteps: number, logLine: string) => {
+    if (hopSteps === 0) return;
+    if (hasPierce) {
+      const pathCells = cellsAlongPath(
+        next.playerPosition,
+        hopSteps,
+        next.boardSize,
+      );
+      next = damageEnemiesOnCells(next, pathCells);
+      if (!pierceLogged) {
+        next.eventLog = addLog(next, 'Durchstoß-Chip: Treffer entlang des Wegs!');
+        pierceLogged = true;
+      }
+    }
+    next.playerPosition = moveClockwise(
+      next.playerPosition,
+      hopSteps,
+      next.boardSize,
+    );
+    moveSegments.push(hopSegment(hopSteps));
+    next.eventLog = addLog(next, logLine);
+    playerMoved = true;
+  };
+
+  if (steps !== 0) {
+    applyHop(
+      steps,
+      steps > 0
+        ? `Du bewegst dich ${steps} Feld(er) vor.`
+        : `Rückzug-Chip: ${Math.abs(steps)} Feld(er) zurück.`,
+    );
+  }
+
   if (hasGrapple && next.enemies.length > 0) {
     const target = getNearestEnemyClockwise(
       next.playerPosition,
@@ -659,40 +730,48 @@ export function playChips(state: RunState): RunState {
       next.boardSize,
     );
     if (target) {
-      moveSteps =
-        clockwiseDistance(next.playerPosition, target.position, next.boardSize) +
-        steps;
-    }
-  }
-
-  if (moveSteps !== 0) {
-    if (hasPierce) {
-      const pathCells = cellsAlongPath(
+      const grappleSteps = clockwiseDistance(
         next.playerPosition,
-        moveSteps,
+        target.position,
         next.boardSize,
       );
-      next = damageEnemiesOnCells(next, pathCells);
-      next.eventLog = addLog(next, 'Durchstoß-Chip: Treffer entlang des Wegs!');
+      if (grappleSteps > 0) {
+        if (hasPierce) {
+          const pathCells = cellsAlongPath(
+            next.playerPosition,
+            grappleSteps,
+            next.boardSize,
+          );
+          next = damageEnemiesOnCells(next, pathCells);
+          if (!pierceLogged) {
+            next.eventLog = addLog(
+              next,
+              'Durchstoß-Chip: Treffer entlang des Wegs!',
+            );
+            pierceLogged = true;
+          }
+        }
+        next.playerPosition = moveClockwise(
+          next.playerPosition,
+          grappleSteps,
+          next.boardSize,
+        );
+        moveSegments.push(grappleSegment(grappleSteps));
+        next.eventLog = addLog(
+          next,
+          `Enterhaken! Du ziehst dich ${grappleSteps} Feld(er) zum nächsten Gegner.`,
+        );
+        playerMoved = true;
+      } else {
+        next.eventLog = addLog(
+          next,
+          'Enterhaken! Du bist bereits beim nächsten Gegner.',
+        );
+      }
     }
-
-    next.playerPosition = moveClockwise(
-      next.playerPosition,
-      moveSteps,
-      next.boardSize,
-    );
-    moveSegments.push(moveSteps);
-    next.eventLog = addLog(
-      next,
-      hasGrapple
-        ? `Enterhaken! ${moveSteps} Feld(er) zum Gegner.`
-        : moveSteps > 0
-          ? `Du bewegst dich ${moveSteps} Feld(er) vor.`
-          : `Rückzug-Chip: ${Math.abs(moveSteps)} Feld(er) zurück.`,
-    );
   }
 
-  if (moveSteps !== 0 || hasTeleport) {
+  if (playerMoved) {
     next = resolveLanding(next, next.playerPosition);
   }
 
@@ -702,7 +781,7 @@ export function playChips(state: RunState): RunState {
   }
 
   if (hasUpgrade(next.upgradeIds, 'kill_momentum') && next.killsThisRound > state.killsThisRound) {
-    moveSegments.push(1);
+    moveSegments.push(hopSegment(1));
     next.playerPosition = moveClockwise(
       next.playerPosition,
       1,

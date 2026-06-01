@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type ProjectileKind = 'arrow' | 'knife';
+export type ProjectileKind = 'arrow' | 'knife' | 'lightning';
 
 interface BoardProjectileProps {
   kind: ProjectileKind;
@@ -28,6 +28,42 @@ function ArrowIcon({ angle }: { angle: number }) {
       />
       <path fill="#8b6914" d="M11 14 h2 v6 h-2 z" />
       <path fill="#c43c3c" d="M10.5 19.5 h3 v2 h-3 z" />
+    </svg>
+  );
+}
+
+function LightningIcon({ angle }: { angle: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-9 w-9 drop-shadow-[0_0_10px_rgba(147,112,219,0.95)]"
+      style={{ transform: `rotate(${angle + 90}deg)` }}
+      aria-hidden
+    >
+      <path
+        fill="none"
+        stroke="#c4b5fd"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M13 2 L8 11 L12 11 L10 22 L17 10 L13 10 Z"
+      />
+      <path
+        fill="#e9d5ff"
+        stroke="#7c3aed"
+        strokeWidth="0.8"
+        strokeLinejoin="round"
+        d="M13 2 L8 11 L12 11 L10 22 L17 10 L13 10 Z"
+        opacity="0.92"
+      />
+      <path
+        fill="none"
+        stroke="#f5f3ff"
+        strokeWidth="1"
+        strokeLinecap="round"
+        d="M12 4 L9.5 10 M14 12 L11.5 18"
+        opacity="0.65"
+      />
     </svg>
   );
 }
@@ -83,15 +119,21 @@ export function BoardProjectile({
 
   return (
     <div
-      className={`pointer-events-none absolute z-[28] -translate-x-1/2 -translate-y-1/2 transition-[left,top] duration-[420ms] ${
-        kind === 'knife' ? 'ease-out' : 'ease-in'
-      }`}
+      className={`pointer-events-none absolute z-[28] -translate-x-1/2 -translate-y-1/2 transition-[left,top] ${
+        kind === 'lightning' ? 'duration-[400ms] ease-in' : 'duration-[420ms]'
+      } ${kind === 'knife' ? 'ease-out' : kind === 'arrow' ? 'ease-in' : ''}`}
       style={{
         left: atTarget ? `${toLeft}%` : `${fromLeft}%`,
         top: atTarget ? `${toTop}%` : `${fromTop}%`,
       }}
     >
-      {kind === 'knife' ? <KnifeIcon angle={angle} /> : <ArrowIcon angle={angle} />}
+      {kind === 'lightning' ? (
+        <LightningIcon angle={angle} />
+      ) : kind === 'knife' ? (
+        <KnifeIcon angle={angle} />
+      ) : (
+        <ArrowIcon angle={angle} />
+      )}
     </div>
   );
 }

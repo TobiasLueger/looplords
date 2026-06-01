@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 
-const BLAST_MS = 380;
+const FLIGHT_MS = 400;
+const IMPACT_MS = 340;
 
 export interface NovaBlastRequest {
+  fromCell: number;
+  targetCells: number[];
   splatterCells: number[];
   token: number;
 }
@@ -19,10 +22,12 @@ export function useNovaBlastAnimation(
   onComplete: () => void,
   onImpact?: () => void,
 ): {
+  phase: 'idle' | 'flight' | 'impact';
   activeSplatterCells: number[];
   defeatedCells: number[];
 } {
   const lastTokenRef = useRef(0);
+  const [phase, setPhase] = useState<'idle' | 'flight' | 'impact'>('idle');
   const [activeSplatterCells, setActiveSplatterCells] = useState<number[]>([]);
   const [defeatedCells, setDefeatedCells] = useState<number[]>([]);
   const onCompleteRef = useRef(onComplete);
@@ -31,7 +36,8 @@ export function useNovaBlastAnimation(
   onImpactRef.current = onImpact;
 
   useEffect(() => {
-    if (!request || request.splatterCells.length === 0) {
+    if (!request || request.targetCells.length === 0) {
+      setPhase('idle');
       setActiveSplatterCells([]);
       setDefeatedCells([]);
       return;
@@ -47,23 +53,34 @@ export function useNovaBlastAnimation(
     lastTokenRef.current = request.token;
 
     let cancelled = false;
-    setActiveSplatterCells(request.splatterCells);
-    setDefeatedCells(request.splatterCells);
-    onImpactRef.current?.();
+    setPhase('flight');
+    setActiveSplatterCells([]);
+    setDefeatedCells([]);
 
     void (async () => {
-      await sleep(BLAST_MS);
+      await sleep(FLIGHT_MS);
       if (cancelled) return;
 
+      setPhase('impact');
+      const kills = request.splatterCells;
+      setActiveSplatterCells(kills);
+      setDefeatedCells(kills);
+      onImpactRef.current?.();
+
+      await sleep(IMPACT_MS);
+      if (cancelled) return;
+
+      setPhase('idle');
       setActiveSplatterCells([]);
       onCompleteRef.current();
     })();
 
     return () => {
       cancelled = true;
+      setPhase('idle');
       setActiveSplatterCells([]);
     };
   }, [animations, request]);
 
-  return { activeSplatterCells, defeatedCells };
+  return { phase, activeSplatterCells, defeatedCells };
 }

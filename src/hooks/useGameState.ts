@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PlayerMoveRequest } from './usePlayerHopAnimation';
+import type { PlayerMoveSegment } from '../game/playerMovement';
 import type { ProjectileShotRequest } from './useProjectileShotAnimation';
 import type { NovaBlastRequest } from './useNovaBlastAnimation';
 import {
@@ -7,6 +8,7 @@ import {
   evaluateNewAchievements,
 } from '../game/achievements';
 import {
+  canPlaySelectedChips,
   createInitialRunState,
   discardAndRedraw,
   endTurn,
@@ -18,7 +20,12 @@ import {
   playChips,
   toggleChipSelection,
 } from '../game/gameLogic';
-import { getCleaveThrowTarget, getKillTriggersForMove, getNovaKillCells } from '../game/moveAnimation';
+import {
+  getCleaveThrowTarget,
+  getKillTriggersForMove,
+  getNovaKillCells,
+  getNovaTargetCells,
+} from '../game/moveAnimation';
 import { sumSelectedChipSteps, isUtilityChip } from '../game/chipDisplay';
 import type { InstantTicketType, RunEndStats, RunState, Screen } from '../game/types';
 import {
@@ -85,7 +92,7 @@ export function useGameState() {
   const cleaveAnimTokenRef = useRef(0);
   const [cleaveThrowAnim, setCleaveThrowAnim] = useState<ProjectileShotRequest | null>(null);
   const pendingAfterNovaRef = useRef<{
-    segments: number[];
+    segments: PlayerMoveSegment[];
     cleaveThrow: { fromCell: number; toCell: number } | null;
     killTriggers: ReturnType<typeof getKillTriggersForMove>;
   } | null>(null);
@@ -256,7 +263,7 @@ export function useGameState() {
 
   const continueChainedAnimations = useCallback(
     (
-      segments: number[],
+      segments: PlayerMoveSegment[],
       cleaveThrow: ReturnType<typeof getCleaveThrowTarget>,
       killTriggers: ReturnType<typeof getKillTriggersForMove>,
     ): boolean => {
@@ -332,9 +339,10 @@ export function useGameState() {
       run.playerPosition,
       segments,
     );
+    const novaTargetCells = getNovaTargetCells(run, next);
     const novaKillCells = getNovaKillCells(run, next);
 
-    if (settings.animations && novaKillCells.length > 0) {
+    if (settings.animations && novaTargetCells.length > 0) {
       pendingRunRef.current = next;
       pendingSfxRef.current = {
         prevKills,
@@ -348,6 +356,8 @@ export function useGameState() {
       };
       novaAnimTokenRef.current += 1;
       setNovaBlastAnim({
+        fromCell: run.playerPosition,
+        targetCells: novaTargetCells,
         splatterCells: novaKillCells,
         token: novaAnimTokenRef.current,
       });
@@ -459,6 +469,11 @@ export function useGameState() {
     return run.hand.some(
       (c) => run.selectedChipIds.includes(c.id) && isUtilityChip(c),
     );
+  }, [run]);
+
+  const canPlaySelected = useMemo(() => {
+    if (!run) return false;
+    return canPlaySelectedChips(run);
   }, [run]);
 
   const handleBuyInstantTicket = useCallback((offerId: string) => {
@@ -598,6 +613,7 @@ export function useGameState() {
     selectedChipSum,
     hasTeleportSelected,
     hasUtilityChipSelected,
+    canPlaySelected,
     runEndStats,
     newlyUnlockedIds,
     devTools,

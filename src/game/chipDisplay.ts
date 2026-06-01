@@ -14,6 +14,16 @@ export function isUtilityChip(chip: Chip): boolean {
   return chip.special != null && UTILITY_SPECIALS.includes(chip.special);
 }
 
+/** Lauf-Chips: Wert-Chips sowie Rückwärts-Bewegung (für Kombos mit Durchstoß/Spalt). */
+export function isMovementChip(chip: Chip): boolean {
+  if (!chip.special) return true;
+  return chip.special === 'retreat' || chip.special === 'dash' || chip.special === 'leap';
+}
+
+export function selectionHasMovementChip(hand: Chip[], selectedIds: string[]): boolean {
+  return hand.some((c) => selectedIds.includes(c.id) && isMovementChip(c));
+}
+
 export function chipLabel(chip: Chip): string {
   switch (chip.special) {
     case 'teleport':
@@ -121,7 +131,7 @@ export function chipDescription(chip: Chip): string {
     case 'scout':
       return 'Nach dem Zug: ziehe 2 Chips mehr aus dem Beutel.';
     case 'nova':
-      return 'Alle Gegner verlieren 1 Treffer.';
+      return 'Alle Gegner verlieren 1 Treffer durch Magischen Schaden.';
     case 'retreat':
       return 'Bewege dich 2 Felder gegen den Uhrzeigersinn.';
     case 'dash':
@@ -133,7 +143,7 @@ export function chipDescription(chip: Chip): string {
     case 'cleave':
       return 'Trifft nach der Landung den nächsten Gegner im Uhrzeigersinn.';
     case 'grapple':
-      return 'Bewege dich zum nächsten Gegner im Uhrzeigersinn (+ Lauf-Chips).';
+      return 'Nach deinen Lauf-Chips: springe zum nächsten Gegner im Uhrzeigersinn.';
     default: {
       const n = chip.value;
       return `Bewege dich ${n} Feld${n === 1 ? '' : 'er'} im Uhrzeigersinn.`;

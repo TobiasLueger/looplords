@@ -22,6 +22,7 @@ interface GameScreenProps {
   selectedChipSum: number;
   hasTeleportSelected: boolean;
   hasUtilityChipSelected: boolean;
+  canPlaySelected: boolean;
   onToggleChip: (id: string) => void;
   onPlayChips: () => void;
   onDiscard: () => void;
@@ -51,6 +52,7 @@ export function GameScreen({
   selectedChipSum,
   hasTeleportSelected,
   hasUtilityChipSelected,
+  canPlaySelected,
   onToggleChip,
   onPlayChips,
   onDiscard,
@@ -82,10 +84,7 @@ export function GameScreen({
   }, [run.lastKillFlash, onClearKillFlash]);
 
   const canPlay =
-    !isBoardAnimating &&
-    run.selectedChipIds.length > 0 &&
-    run.turnsRemaining > 0 &&
-    (selectedChipSum !== 0 || hasTeleportSelected || hasUtilityChipSelected);
+    !isBoardAnimating && canPlaySelected;
 
   const hearts = Array.from({ length: run.maxLives }, (_, i) => i < run.lives);
 

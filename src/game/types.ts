@@ -13,6 +13,8 @@ export type Screen =
 
 export type EnemyType = 'normal' | 'fast' | 'tank' | 'elite' | 'boss';
 
+import type { PlayerMoveSegment } from './playerMovement';
+
 export type ChipSpecial =
   | 'teleport'
   | 'overcharge'
@@ -124,8 +126,8 @@ export interface RunState {
   endlessMode: boolean;
   runMilestones: RunMilestones;
   pendingEndlessChoice: boolean;
-  /** Step counts per movement segment for board hop animation (last playChips action). */
-  playerMoveSteps: number[];
+  /** Movement segments for board animation (last playChips action). */
+  playerMoveSteps: PlayerMoveSegment[];
   /** Incremented when playerMoveSteps is set so the UI animates once per action. */
   playerMoveToken: number;
 }

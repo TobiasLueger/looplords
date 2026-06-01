@@ -126,14 +126,14 @@ const SHOP_ABILITY_CHIPS: ShopChipTemplate[] = [
   {
     id: 'grapple',
     name: 'Enterhaken-Chip',
-    description: 'Bewege dich zum nächsten Gegner im Uhrzeigersinn (+ Lauf-Chips).',
+    description: 'Nach deinen Lauf-Chips: springe zum nächsten Gegner im Uhrzeigersinn.',
     price: 6,
     create: () => createChip(0, 'grapple'),
   },
   {
     id: 'nova',
     name: 'Nova-Chip',
-    description: 'Alle Gegner verlieren 1 Treffer.',
+    description: 'Alle Gegner verlieren 1 Treffer durch Magischen Schaden.',
     price: 8,
     create: () => createChip(0, 'nova'),
   },

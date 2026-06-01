@@ -280,6 +280,8 @@ export function DevToolsPanel({
           <div className={btnGrid}>
             <Btn label="Nova" disabled={!run} onClick={api.previewNova} />
             <Btn label="Lauf-Hop" disabled={!run} onClick={api.previewMove} />
+            <Btn label="Teleport" disabled={!run} onClick={api.previewTeleport} />
+            <Btn label="Enterhaken" disabled={!run} onClick={api.previewGrapple} />
             <Btn label="Scharfschuss" disabled={!run} onClick={api.previewSniper} />
             <Btn label="Spalt-Wurf" disabled={!run} onClick={api.previewCleave} />
             <Btn label="Nova→Hop→Spalt" disabled={!run} onClick={api.previewFullCombo} />

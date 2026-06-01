@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import type { PlayerMoveRequest } from './usePlayerHopAnimation';
+import { grappleSegment, hopSegment, teleportSegment } from '../game/playerMovement';
 import type { ProjectileShotRequest } from './useProjectileShotAnimation';
 import type { NovaBlastRequest } from './useNovaBlastAnimation';
 import {
@@ -64,6 +65,8 @@ export interface DevToolsApi {
   toggleUpgrade: (id: string) => void;
   previewNova: () => void;
   previewMove: () => void;
+  previewTeleport: () => void;
+  previewGrapple: () => void;
   previewSniper: () => void;
   previewCleave: () => void;
   previewFullCombo: () => void;
@@ -161,12 +164,17 @@ export function useDevToolsApi({
   const previewNova = useCallback(() => {
     if (!run) return;
     clearPendingMove();
-    const cells =
+    const targets =
       run.enemies.length > 0
-        ? run.enemies.map((e) => e.position)
+        ? [...new Set(run.enemies.map((e) => e.position))]
         : [(run.playerPosition + 2) % run.boardSize, (run.playerPosition + 4) % run.boardSize];
     novaAnimTokenRef.current += 1;
-    setNovaBlastAnim({ splatterCells: cells, token: novaAnimTokenRef.current });
+    setNovaBlastAnim({
+      fromCell: run.playerPosition,
+      targetCells: targets,
+      splatterCells: targets.slice(0, 1),
+      token: novaAnimTokenRef.current,
+    });
   }, [clearPendingMove, novaAnimTokenRef, run, setNovaBlastAnim]);
 
   const previewMove = useCallback(() => {
@@ -174,7 +182,29 @@ export function useDevToolsApi({
     clearPendingMove();
     moveAnimTokenRef.current += 1;
     setPlayerMoveAnim({
-      segments: [2, 3],
+      segments: [hopSegment(2), hopSegment(3)],
+      token: moveAnimTokenRef.current,
+      killTriggers: [],
+    });
+  }, [clearPendingMove, moveAnimTokenRef, run, setPlayerMoveAnim]);
+
+  const previewTeleport = useCallback(() => {
+    if (!run) return;
+    clearPendingMove();
+    moveAnimTokenRef.current += 1;
+    setPlayerMoveAnim({
+      segments: [teleportSegment(Math.floor(run.boardSize / 2))],
+      token: moveAnimTokenRef.current,
+      killTriggers: [],
+    });
+  }, [clearPendingMove, moveAnimTokenRef, run, setPlayerMoveAnim]);
+
+  const previewGrapple = useCallback(() => {
+    if (!run) return;
+    clearPendingMove();
+    moveAnimTokenRef.current += 1;
+    setPlayerMoveAnim({
+      segments: [grappleSegment(3)],
       token: moveAnimTokenRef.current,
       killTriggers: [],
     });
@@ -207,16 +237,21 @@ export function useDevToolsApi({
   const previewFullCombo = useCallback(() => {
     if (!run) return;
     clearPendingMove();
-    const cells =
+    const targets =
       run.enemies.length > 0
-        ? run.enemies.map((e) => e.position)
+        ? [...new Set(run.enemies.map((e) => e.position))]
         : [(run.playerPosition + 1) % run.boardSize];
     novaAnimTokenRef.current += 1;
-    setNovaBlastAnim({ splatterCells: cells, token: novaAnimTokenRef.current });
+    setNovaBlastAnim({
+      fromCell: run.playerPosition,
+      targetCells: targets,
+      splatterCells: targets,
+      token: novaAnimTokenRef.current,
+    });
     window.setTimeout(() => {
       moveAnimTokenRef.current += 1;
       setPlayerMoveAnim({
-        segments: [3],
+        segments: [hopSegment(3)],
         token: moveAnimTokenRef.current,
         killTriggers: [],
       });
@@ -297,6 +332,8 @@ export function useDevToolsApi({
       toggleUpgrade: (id) => patch((r) => devToggleUpgrade(r, id)),
       previewNova,
       previewMove,
+      previewTeleport,
+      previewGrapple,
       previewSniper,
       previewCleave,
       previewFullCombo,
@@ -320,6 +357,8 @@ export function useDevToolsApi({
     clearPendingMove,
     previewNova,
     previewMove,
+    previewTeleport,
+    previewGrapple,
     previewSniper,
     previewCleave,
     previewFullCombo,

@@ -70,6 +70,7 @@ export default function App() {
     selectedChipSum,
     hasTeleportSelected,
     hasUtilityChipSelected,
+    canPlaySelected,
     runEndStats,
     newlyUnlockedIds,
     devTools,
@@ -160,6 +161,7 @@ export default function App() {
           selectedChipSum={selectedChipSum}
           hasTeleportSelected={hasTeleportSelected}
           hasUtilityChipSelected={hasUtilityChipSelected}
+          canPlaySelected={canPlaySelected}
           onToggleChip={toggleChip}
           onPlayChips={handlePlayChips}
           onDiscard={handleDiscard}

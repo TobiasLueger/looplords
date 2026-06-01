@@ -26,6 +26,10 @@ export default {
         'player-strike': 'playerStrike 0.32s ease-out',
         'enemy-splatter': 'enemySplatter 0.32s ease-out forwards',
         'enemy-death': 'enemyDeath 0.32s ease-out forwards',
+        'teleport-vanish': 'teleportVanish 0.22s ease-in forwards',
+        'teleport-appear': 'teleportAppear 0.3s ease-out forwards',
+        'smoke-puff': 'smokePuff 0.55s ease-out forwards',
+        'player-grapple': 'playerGrapple 0.45s ease-in infinite',
       },
       keyframes: {
         pulseKill: {
@@ -55,6 +59,25 @@ export default {
           '0%': { transform: 'scale(1) rotate(0deg)', opacity: '1' },
           '35%': { transform: 'scale(1.08) rotate(-10deg)', opacity: '1' },
           '100%': { transform: 'scale(0.55) rotate(18deg)', opacity: '0' },
+        },
+        teleportVanish: {
+          '0%': { transform: 'scale(1)', opacity: '1', filter: 'blur(0)' },
+          '55%': { transform: 'scale(1.06)', opacity: '0.65', filter: 'blur(1px)' },
+          '100%': { transform: 'scale(0.35)', opacity: '0', filter: 'blur(6px)' },
+        },
+        teleportAppear: {
+          '0%': { transform: 'scale(0.4)', opacity: '0', filter: 'blur(8px)' },
+          '45%': { transform: 'scale(1.08)', opacity: '0.85', filter: 'blur(2px)' },
+          '100%': { transform: 'scale(1)', opacity: '1', filter: 'blur(0)' },
+        },
+        smokePuff: {
+          '0%': { transform: 'scale(0.35)', opacity: '0' },
+          '25%': { transform: 'scale(0.95)', opacity: '0.9' },
+          '100%': { transform: 'scale(1.35)', opacity: '0' },
+        },
+        playerGrapple: {
+          '0%, 100%': { transform: 'translateY(2%) scale(1.02, 0.96)' },
+          '50%': { transform: 'translateY(6%) scale(1.06, 0.9)' },
         },
       },
     },

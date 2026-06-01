@@ -93,7 +93,7 @@ export function HowToPlayScreen({ onBack }: HowToPlayScreenProps) {
                 <li>Teleport: halbe Runde springen</li>
                 <li>Überladung: verdoppelt Lauf-Schritte der gleichzeitig gespielten Chips</li>
                 <li>Sturm / Sprung: 3 bzw. 4 Felder gegen den Uhrzeigersinn</li>
-                <li>Enterhaken: springe zum nächsten Gegner (+ Lauf-Chips)</li>
+                <li>Enterhaken: erst Lauf-Chips, dann Sprung zum nächsten Gegner</li>
                 <li>Durchstoß / Spalt: Treffer entlang des Wegs bzw. auf den nächsten Gegner</li>
                 <li>Echo / Späher: zieht 1 bzw. 2 Chips nach dem Zug</li>
                 <li>Nova: alle Gegner -1 Treffer</li>
