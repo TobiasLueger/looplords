@@ -100,14 +100,13 @@ export function usePlayerHopAnimation(
   onKillStrikeRef.current = onKillStrike;
 
   useEffect(() => {
-    if (!isAnimating && !moveRequest) {
-      setDisplayCell(startCell);
-      setTeleportSmokeCells([]);
-      setPlayerVisible(true);
-      setInstantPosition(false);
-      setPlayerAnimMode('idle');
-      setGrapplePull(null);
-    }
+    if (isAnimating || moveRequest) return;
+    setDisplayCell(startCell);
+    setTeleportSmokeCells([]);
+    setPlayerVisible(true);
+    setInstantPosition(false);
+    setPlayerAnimMode('idle');
+    setGrapplePull(null);
   }, [startCell, isAnimating, moveRequest]);
 
   useEffect(() => {
@@ -266,6 +265,7 @@ export function usePlayerHopAnimation(
       setPlayerVisible(true);
       setInstantPosition(false);
       setPlayerAnimMode('idle');
+      setDisplayCell(from);
       setIsAnimating(false);
       onCompleteRef.current();
     })();

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type ProjectileKind = 'arrow' | 'knife' | 'lightning';
+export type ProjectileKind = 'arrow' | 'enemy-arrow' | 'knife' | 'lightning';
 
 interface BoardProjectileProps {
   kind: ProjectileKind;
@@ -10,6 +10,26 @@ interface BoardProjectileProps {
   toY: number;
   boardCoordSize: number;
   active: boolean;
+}
+
+function EnemyArrowIcon({ angle }: { angle: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-9 w-9 drop-shadow-[0_0_12px_rgba(196,60,60,0.85)]"
+      style={{ transform: `rotate(${angle + 90}deg)` }}
+      aria-hidden
+    >
+      <path
+        fill="#ff6b6b"
+        stroke="#7f1d1d"
+        strokeWidth="1.2"
+        d="M12 2 L15 17 L12 14 L9 17 Z"
+      />
+      <path fill="#991b1b" d="M10.5 14 h3 v7 h-3 z" />
+      <path fill="#fbbf24" d="M11 16 h2 v2 h-2 z" />
+    </svg>
+  );
 }
 
 function ArrowIcon({ angle }: { angle: number }) {
@@ -119,9 +139,9 @@ export function BoardProjectile({
 
   return (
     <div
-      className={`pointer-events-none absolute z-[28] -translate-x-1/2 -translate-y-1/2 transition-[left,top] ${
+      className={`pointer-events-none absolute z-[35] -translate-x-1/2 -translate-y-1/2 transition-[left,top] ${
         kind === 'lightning' ? 'duration-[400ms] ease-in' : 'duration-[420ms]'
-      } ${kind === 'knife' ? 'ease-out' : kind === 'arrow' ? 'ease-in' : ''}`}
+      } ${kind === 'knife' ? 'ease-out' : kind === 'arrow' || kind === 'enemy-arrow' ? 'ease-in' : ''}`}
       style={{
         left: atTarget ? `${toLeft}%` : `${fromLeft}%`,
         top: atTarget ? `${toTop}%` : `${fromTop}%`,
@@ -131,6 +151,8 @@ export function BoardProjectile({
         <LightningIcon angle={angle} />
       ) : kind === 'knife' ? (
         <KnifeIcon angle={angle} />
+      ) : kind === 'enemy-arrow' ? (
+        <EnemyArrowIcon angle={angle} />
       ) : (
         <ArrowIcon angle={angle} />
       )}

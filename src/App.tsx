@@ -66,6 +66,9 @@ export default function App() {
     novaBlastAnim,
     commitPendingNova,
     handleNovaImpact,
+    enemyShotAnim,
+    commitPendingEndTurn,
+    handleEnemyShotImpact,
     isBoardAnimating,
     selectedChipSum,
     hasTeleportSelected,
@@ -182,6 +185,9 @@ export default function App() {
           novaBlastRequest={novaBlastAnim}
           onNovaBlastComplete={commitPendingNova}
           onNovaImpact={handleNovaImpact}
+          enemyShotRequest={enemyShotAnim}
+          onEnemyShotComplete={commitPendingEndTurn}
+          onEnemyShotImpact={handleEnemyShotImpact}
           isBoardAnimating={isBoardAnimating}
         />
       );

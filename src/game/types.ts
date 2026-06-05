@@ -11,7 +11,15 @@ export type Screen =
   | 'runEnd'
   | 'achievements';
 
-export type EnemyType = 'normal' | 'fast' | 'tank' | 'elite' | 'boss';
+export type EnemyType =
+  | 'normal'
+  | 'fast'
+  | 'tank'
+  | 'elite'
+  | 'boss'
+  | 'nullward'
+  | 'bulwark'
+  | 'marksman';
 
 import type { PlayerMoveSegment } from './playerMovement';
 

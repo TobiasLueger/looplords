@@ -11,6 +11,7 @@ interface BoardCellProps {
   enemies: Enemy[];
   animations: boolean;
   killFlash: boolean;
+  projectileHitFlash?: boolean;
   showSplatter: boolean;
   enemyDying?: boolean;
   upgradeIds: string[];
@@ -23,6 +24,7 @@ export function BoardCell({
   enemies,
   animations,
   killFlash,
+  projectileHitFlash = false,
   showSplatter,
   enemyDying = false,
   upgradeIds,
@@ -64,12 +66,16 @@ export function BoardCell({
       <div className="relative z-10 flex flex-col items-center gap-0.5 overflow-visible p-1">
         {isPlayerHere && (
           <PlayerTooltip run={run}>
-            <EntitySprite
-              kind="player"
-              size={playerSize}
-              animate={animations}
-              flash={killFlash}
-            />
+            <div
+              className={projectileHitFlash ? 'animate-player-strike' : ''}
+            >
+              <EntitySprite
+                kind="player"
+                size={playerSize}
+                animate={animations}
+                flash={killFlash || projectileHitFlash}
+              />
+            </div>
           </PlayerTooltip>
         )}
         {enemies.map((e, i) => (

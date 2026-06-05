@@ -30,6 +30,9 @@ export function getGoldForEnemyType(type: EnemyType): number {
       return 3;
     case 'tank':
     case 'fast':
+    case 'nullward':
+    case 'bulwark':
+    case 'marksman':
       return 2;
     default:
       return 1;

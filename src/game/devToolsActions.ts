@@ -19,7 +19,7 @@ function nextDevEnemyId(): string {
 
 function createDevEnemy(type: EnemyType, position: number, round: number): Enemy {
   let hp = 1;
-  if (type === 'tank') hp = 2;
+  if (type === 'tank' || type === 'bulwark') hp = 2;
   if (type === 'elite') hp = 2;
   if (type === 'boss') hp = 4 + Math.floor(round / 5);
   return {

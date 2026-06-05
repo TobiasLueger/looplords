@@ -17,7 +17,9 @@ import {
   resetChipIdCounter,
   shuffle,
 } from './deck';
-import { getEnemyDamage } from './enemyInfo';
+import { runEnemyPhase, type EnemyShot } from './enemyPhase';
+import { getEnemyDisplayName } from './enemyInfo';
+import { canEnemyTakeDamage, type DamageSource } from './enemyTraits';
 import type { Chip, Enemy, EnemyType, RunState } from './types';
 import { EMPTY_RUN_MILESTONES } from './types';
 import {
@@ -69,9 +71,8 @@ function addLog(state: RunState, message: string): string[] {
 
 function createEnemy(type: EnemyType, position: number, round: number): Enemy {
   const isBoss = type === 'boss';
-  const isTank = type === 'tank';
   let hp = 1;
-  if (isTank) hp = 2;
+  if (type === 'tank' || type === 'bulwark') hp = 2;
   if (type === 'elite') hp = 2;
   if (isBoss) hp = 4 + Math.floor(round / 5);
 
@@ -86,6 +87,11 @@ function createEnemy(type: EnemyType, position: number, round: number): Enemy {
 
 function pickEnemyType(round: number, index: number, bossRound: boolean): EnemyType {
   if (bossRound && index === 0) return 'boss';
+  if (index > 0) {
+    if (round >= 9 && index % 6 === 3) return 'marksman';
+    if (round >= 8 && index % 5 === 2) return 'nullward';
+    if (round >= 7 && index % 5 === 4) return 'bulwark';
+  }
   if (round >= 10 && index % 4 === 0) return 'elite';
   if (round >= 6 && index % 3 === 1) return 'fast';
   if (round >= 4 && index % 3 === 2) return 'tank';
@@ -113,17 +119,6 @@ function spawnEnemies(
   }
 
   return enemies;
-}
-
-function getEnemySpeed(type: EnemyType): number {
-  switch (type) {
-    case 'fast':
-      return 2;
-    case 'boss':
-      return 1;
-    default:
-      return 1;
-  }
 }
 
 export function createInitialRunState(upgradeIds: string[] = []): RunState {
@@ -251,53 +246,32 @@ export function startRound(
   };
 }
 
-function damagePlayer(state: RunState, amount: number): RunState {
-  let shield = state.shield;
-  let lives = state.lives;
-  let remaining = amount;
-
-  if (shield > 0) {
-    const absorbed = Math.min(shield, remaining);
-    shield -= absorbed;
-    remaining -= absorbed;
-  }
-
-  lives -= remaining;
-
-  return {
-    ...state,
-    shield,
-    lives: Math.max(0, lives),
-    eventLog: addLog(
-      state,
-      remaining > 0
-        ? `Du erleidest ${remaining} Schaden! (${lives} Leben übrig)`
-        : 'Schild blockiert den Angriff!',
-    ),
-  };
-}
-
 function removeEnemyAt(
   enemies: Enemy[],
   position: number,
   upgradeIds: string[],
+  source: DamageSource = 'melee',
 ): { enemies: Enemy[]; killed: Enemy[] } {
   const killed: Enemy[] = [];
   const remaining: Enemy[] = [];
 
   for (const e of enemies) {
-    if (e.position === position) {
-      let hp = e.hp;
-      if (e.type === 'tank' && hasUpgrade(upgradeIds, 'tank_bane')) {
-        hp = 1;
-      }
-      if (hp > 1) {
-        remaining.push({ ...e, hp: hp - 1 });
-      } else {
-        killed.push(e);
-      }
-    } else {
+    if (e.position !== position) {
       remaining.push(e);
+      continue;
+    }
+    if (!canEnemyTakeDamage(e.type, source)) {
+      remaining.push(e);
+      continue;
+    }
+    let hp = e.hp;
+    if (e.type === 'tank' && hasUpgrade(upgradeIds, 'tank_bane')) {
+      hp = 1;
+    }
+    if (hp > 1) {
+      remaining.push({ ...e, hp: hp - 1 });
+    } else {
+      killed.push(e);
     }
   }
 
@@ -352,7 +326,11 @@ function damageEnemiesOnCells(state: RunState, cells: number[]): RunState {
   return next;
 }
 
-function applyHitToNearestFrom(state: RunState, fromPosition: number): RunState {
+function applyHitToNearestFrom(
+  state: RunState,
+  fromPosition: number,
+  source: DamageSource = 'projectile',
+): RunState {
   const target = getNearestEnemyClockwise(
     fromPosition,
     state.enemies,
@@ -363,10 +341,21 @@ function applyHitToNearestFrom(state: RunState, fromPosition: number): RunState 
   const dist = clockwiseDistance(fromPosition, target.position, state.boardSize);
   if (dist <= 0) return state;
 
+  if (!canEnemyTakeDamage(target.type, source)) {
+    return {
+      ...state,
+      eventLog: addLog(
+        state,
+        `${getEnemyDisplayName(target.type)} blockiert das Projektil!`,
+      ),
+    };
+  }
+
   const { enemies, killed } = removeEnemyAt(
     state.enemies,
     target.position,
     state.upgradeIds,
+    source,
   );
   let next = { ...state, enemies };
   return processKill(next, killed);
@@ -402,17 +391,31 @@ export function damageAllEnemiesOnce(state: RunState): RunState {
   if (state.enemies.length === 0) return state;
 
   let next = { ...state };
-  const positions = [...new Set(state.enemies.map((e) => e.position))];
-  for (const pos of positions) {
+  const immune: string[] = [];
+
+  for (const enemy of state.enemies) {
+    if (!canEnemyTakeDamage(enemy.type, 'magic')) {
+      immune.push(getEnemyDisplayName(enemy.type));
+      continue;
+    }
     const { enemies, killed } = removeEnemyAt(
       next.enemies,
-      pos,
+      enemy.position,
       next.upgradeIds,
+      'magic',
     );
     next = { ...next, enemies };
     next = processKill(next, killed);
     if (next.enemies.length === 0) break;
   }
+
+  if (immune.length > 0) {
+    next.eventLog = addLog(
+      next,
+      `${immune.join(', ')} immun gegen Nova!`,
+    );
+  }
+
   return next;
 }
 
@@ -462,18 +465,7 @@ function processKill(
 }
 
 function enemyLabel(type: EnemyType): string {
-  switch (type) {
-    case 'boss':
-      return 'Boss';
-    case 'elite':
-      return 'Elite';
-    case 'fast':
-      return 'Schneller Gegner';
-    case 'tank':
-      return 'Tank';
-    default:
-      return 'Gegner';
-  }
+  return getEnemyDisplayName(type);
 }
 
 function resolveLanding(
@@ -633,10 +625,15 @@ export function canPlaySelectedChips(state: RunState): boolean {
   );
 }
 
-export function playChips(state: RunState): RunState {
-  if (state.selectedChipIds.length === 0) return state;
-  if (state.turnsRemaining <= 0) return state;
-  if (!canPlaySelectedChips(state)) return state;
+export interface ChipPlayResult {
+  state: RunState;
+  extraDraw: number;
+}
+
+export function executeChipPlay(state: RunState): ChipPlayResult {
+  if (state.selectedChipIds.length === 0) return { state, extraDraw: 0 };
+  if (state.turnsRemaining <= 0) return { state, extraDraw: 0 };
+  if (!canPlaySelectedChips(state)) return { state, extraDraw: 0 };
 
   const {
     steps,
@@ -655,7 +652,7 @@ export function playChips(state: RunState): RunState {
   );
 
   if (hasGrapple && state.enemies.length === 0) {
-    return state;
+    return { state, extraDraw: 0 };
   }
 
   let next: RunState = {
@@ -800,16 +797,37 @@ export function playChips(state: RunState): RunState {
   }
 
   if (next.enemies.length === 0) {
-    return onRoundWon(next);
+    return { state: onRoundWon(next), extraDraw: 0 };
   }
 
-  next = runEnemyPhase(next);
+  return { state: next, extraDraw };
+}
 
-  if (next.lives <= 0) return next;
-  if (next.enemies.length === 0) return onRoundWon(next);
+export interface EndTurnResult {
+  state: RunState;
+  enemyShots: EnemyShot[];
+}
+
+export function finalizePlayerAction(
+  state: RunState,
+  extraDraw: number,
+): EndTurnResult {
+  if (state.enemies.length === 0) {
+    return { state, enemyShots: [] };
+  }
+
+  const phase = runEnemyPhase(state);
+  let next = phase.state;
+
+  if (next.lives <= 0) {
+    return { state: next, enemyShots: phase.shots };
+  }
+  if (next.enemies.length === 0) {
+    return { state: onRoundWon(next), enemyShots: phase.shots };
+  }
   if (next.turnsRemaining <= 0 && next.enemies.length > 0) {
     next.eventLog = addLog(next, 'Keine Züge mehr — die Schleife bricht!');
-    return next;
+    return { state: next, enemyShots: phase.shots };
   }
 
   const handSize = getHandSize(next.upgradeIds);
@@ -845,11 +863,19 @@ export function playChips(state: RunState): RunState {
     }
   }
 
-  return next;
+  return { state: next, enemyShots: phase.shots };
 }
 
-export function endTurn(state: RunState): RunState {
-  if (state.turnsRemaining <= 0) return state;
+export function playChips(state: RunState): RunState {
+  const { state: afterPlay, extraDraw } = executeChipPlay(state);
+  if (afterPlay.enemies.length === 0) return afterPlay;
+  return finalizePlayerAction(afterPlay, extraDraw).state;
+}
+
+export function endTurn(state: RunState): EndTurnResult {
+  if (state.turnsRemaining <= 0) {
+    return { state, enemyShots: [] };
+  }
 
   let next: RunState = {
     ...state,
@@ -862,52 +888,17 @@ export function endTurn(state: RunState): RunState {
   next.eventLog = addLog(next, 'Zug beendet.');
 
   if (next.enemies.length === 0) {
-    return onRoundWon(next);
+    return { state: onRoundWon(next), enemyShots: [] };
   }
 
-  next = runEnemyPhase(next);
+  const phase = runEnemyPhase(next);
+  next = phase.state;
 
   if (next.turnsRemaining <= 0 && next.enemies.length > 0) {
     next.eventLog = addLog(next, 'Keine Züge mehr — die Schleife bricht!');
   }
 
-  return next;
-}
-
-function runEnemyPhase(state: RunState): RunState {
-  if (
-    hasUpgrade(state.upgradeIds, 'slow_enemies') &&
-    state.playerTurnCount % 2 === 0
-  ) {
-    return {
-      ...state,
-      eventLog: addLog(state, 'Gegner warten (Zeitfrost).'),
-    };
-  }
-
-  let next = { ...state };
-  const sorted = [...next.enemies].sort((a, b) => a.position - b.position);
-
-  for (const enemy of sorted) {
-    const speed = getEnemySpeed(enemy.type);
-    const newPos = moveClockwise(enemy.position, speed, next.boardSize);
-
-    next.enemies = next.enemies.map((e) =>
-      e.id === enemy.id ? { ...e, position: newPos } : e,
-    );
-
-    if (newPos === next.playerPosition) {
-      const dmg = getEnemyDamage(enemy.type);
-      next = damagePlayer(next, dmg);
-      if (enemy.type === 'boss') {
-        next = damagePlayer(next, 1);
-        next.eventLog = addLog(next, 'Boss-Schlag trifft doppelt!');
-      }
-    }
-  }
-
-  next.eventLog = addLog(next, 'Gegnerzug abgeschlossen.');
-  return next;
+  return { state: next, enemyShots: phase.shots };
 }
 
 function onRoundWon(state: RunState): RunState {

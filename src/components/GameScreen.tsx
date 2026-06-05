@@ -4,6 +4,7 @@ import type { InstantTicketType } from '../game/types';
 import type { PlayerMoveRequest } from '../hooks/usePlayerHopAnimation';
 import type { ProjectileShotRequest } from '../hooks/useProjectileShotAnimation';
 import type { NovaBlastRequest } from '../hooks/useNovaBlastAnimation';
+import type { EnemyShotRequest } from '../hooks/useEnemyShotAnimation';
 import { getChipSprite } from '../utils/assets';
 import { RUINS_ACTIONS, RUINS_BACKGROUNDS, RUINS_UI } from '../utils/ruinsAssets';
 import { Board } from './Board';
@@ -43,6 +44,9 @@ interface GameScreenProps {
   novaBlastRequest: NovaBlastRequest | null;
   onNovaBlastComplete: () => void;
   onNovaImpact?: () => void;
+  enemyShotRequest: EnemyShotRequest | null;
+  onEnemyShotComplete: () => void;
+  onEnemyShotImpact?: () => void;
   isBoardAnimating: boolean;
 }
 
@@ -73,6 +77,9 @@ export function GameScreen({
   novaBlastRequest,
   onNovaBlastComplete,
   onNovaImpact,
+  enemyShotRequest,
+  onEnemyShotComplete,
+  onEnemyShotImpact,
   isBoardAnimating,
 }: GameScreenProps) {
   const [showBag, setShowBag] = useState(false);
@@ -195,6 +202,9 @@ export function GameScreen({
               novaBlastRequest={novaBlastRequest}
               onNovaBlastComplete={onNovaBlastComplete}
               onNovaImpact={onNovaImpact}
+              enemyShotRequest={enemyShotRequest}
+              onEnemyShotComplete={onEnemyShotComplete}
+              onEnemyShotImpact={onEnemyShotImpact}
             />
           </div>
 

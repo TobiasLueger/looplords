@@ -70,6 +70,9 @@ export function HowToPlayScreen({ onBack }: HowToPlayScreenProps) {
                 <li>Tank: 2 Treffer nötig</li>
                 <li>Elite: stärker, 2 Treffer</li>
                 <li>Boss: viele Leben, extra Schaden (alle 5 Runden)</li>
+                <li>Leerwächter: immun gegen Nova (ab Runde 8)</li>
+                <li>Schildträger: immun gegen Projektile wie Spalt und Scharfschuss (ab Runde 7)</li>
+                <li>Schütze: schießt jeden Gegnerzug auf dich (ab Runde 9)</li>
               </ul>
             </Section>
 

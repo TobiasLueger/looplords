@@ -1,20 +1,25 @@
 import type { EnemyType } from './types';
+import { isNovaImmune, isProjectileImmune } from './enemyTraits';
 import { hasUpgrade } from './upgrades';
 
 function getEnemySpeed(type: EnemyType): number {
   switch (type) {
     case 'fast':
       return 2;
-    case 'boss':
-      return 1;
     default:
       return 1;
   }
 }
 
 export function getEnemyDamage(type: EnemyType): number {
-  const base = type === 'boss' ? 2 : type === 'elite' ? 2 : 1;
-  return Math.max(1, Math.round(base));
+  switch (type) {
+    case 'boss':
+      return 2;
+    case 'elite':
+      return 2;
+    default:
+      return 1;
+  }
 }
 
 export function getEnemyDisplayName(type: EnemyType): string {
@@ -27,6 +32,12 @@ export function getEnemyDisplayName(type: EnemyType): string {
       return 'Schneller Gegner';
     case 'tank':
       return 'Tank';
+    case 'nullward':
+      return 'Leerwächter';
+    case 'bulwark':
+      return 'Schildträger';
+    case 'marksman':
+      return 'Schütze';
     default:
       return 'Gegner';
   }
@@ -54,8 +65,18 @@ export function getEnemyTooltipLines(
   }
 
   lines.push(`Schaden bei Treffer: ${damage}`);
+
   if (type === 'boss') {
     lines.push('Spezial: zusätzlicher Treffer bei Kontakt');
+  }
+  if (isNovaImmune(type)) {
+    lines.push('Spezial: immun gegen Nova (Magie)');
+  }
+  if (isProjectileImmune(type)) {
+    lines.push('Spezial: immun gegen Projektile (Spalt, Scharfschuss)');
+  }
+  if (type === 'marksman') {
+    lines.push('Spezial: schießt jeden Gegnerzug auf dich (1 Schaden)');
   }
 
   return lines;

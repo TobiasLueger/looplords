@@ -3,6 +3,7 @@ import type { PlayerMoveRequest } from './usePlayerHopAnimation';
 import type { PlayerMoveSegment } from '../game/playerMovement';
 import type { ProjectileShotRequest } from './useProjectileShotAnimation';
 import type { NovaBlastRequest } from './useNovaBlastAnimation';
+import type { EnemyShotRequest } from './useEnemyShotAnimation';
 import {
   buildRunEndStats,
   evaluateNewAchievements,
@@ -12,12 +13,13 @@ import {
   createInitialRunState,
   discardAndRedraw,
   endTurn,
+  executeChipPlay,
+  finalizePlayerAction,
   getGameOverReason,
   getSniperTargetCell,
   isCampaignCompletePending,
   isGameOver,
   openEndlessShop,
-  playChips,
   toggleChipSelection,
 } from '../game/gameLogic';
 import {
@@ -98,6 +100,10 @@ export function useGameState() {
   } | null>(null);
   const novaAnimTokenRef = useRef(0);
   const [novaBlastAnim, setNovaBlastAnim] = useState<NovaBlastRequest | null>(null);
+  const pendingEndTurnRef = useRef<RunState | null>(null);
+  const pendingExtraDrawRef = useRef(0);
+  const enemyShotAnimTokenRef = useRef(0);
+  const [enemyShotAnim, setEnemyShotAnim] = useState<EnemyShotRequest | null>(null);
 
   const clearPendingMove = useCallback(() => {
     pendingRunRef.current = null;
@@ -105,10 +111,13 @@ export function useGameState() {
     pendingSniperRunRef.current = null;
     pendingCleaveThrowRef.current = null;
     pendingAfterNovaRef.current = null;
+    pendingEndTurnRef.current = null;
+    pendingExtraDrawRef.current = 0;
     setPlayerMoveAnim(null);
     setSniperShotAnim(null);
     setCleaveThrowAnim(null);
     setNovaBlastAnim(null);
+    setEnemyShotAnim(null);
   }, []);
 
   useEffect(() => {
@@ -207,15 +216,34 @@ export function useGameState() {
     setRun((r) => (r ? toggleChipSelection(r, chipId) : r));
   }, []);
 
+  const applyResultWithEnemyShots = useCallback(
+    (
+      result: ReturnType<typeof finalizePlayerAction>,
+      syncState?: RunState,
+    ) => {
+      if (settings.animations && result.enemyShots.length > 0) {
+        if (syncState) {
+          setRun({ ...syncState, playerMoveSteps: [] });
+        }
+        pendingEndTurnRef.current = result.state;
+        enemyShotAnimTokenRef.current += 1;
+        setEnemyShotAnim({
+          shots: result.enemyShots,
+          token: enemyShotAnimTokenRef.current,
+        });
+        return;
+      }
+      setRun({ ...result.state, playerMoveSteps: [] });
+    },
+    [settings.animations],
+  );
+
   const commitPendingRunInternal = useCallback(() => {
-    const next = pendingRunRef.current;
-    if (!next) return;
+    const afterPlay = pendingRunRef.current;
+    if (!afterPlay) return;
 
     pendingRunRef.current = null;
     pendingCleaveThrowRef.current = null;
-    setPlayerMoveAnim(null);
-    setCleaveThrowAnim(null);
-    setNovaBlastAnim(null);
 
     const sfx = pendingSfxRef.current;
     pendingSfxRef.current = null;
@@ -228,8 +256,23 @@ export function useGameState() {
       }
     }
 
-    setRun({ ...next, playerMoveSteps: [] });
-  }, [settings.sound]);
+    const extraDraw = pendingExtraDrawRef.current;
+    pendingExtraDrawRef.current = 0;
+
+    if (afterPlay.enemies.length === 0) {
+      setRun({ ...afterPlay, playerMoveSteps: [] });
+      setPlayerMoveAnim(null);
+      setCleaveThrowAnim(null);
+      setNovaBlastAnim(null);
+      return;
+    }
+
+    const result = finalizePlayerAction(afterPlay, extraDraw);
+    applyResultWithEnemyShots(result, afterPlay);
+    setPlayerMoveAnim(null);
+    setCleaveThrowAnim(null);
+    setNovaBlastAnim(null);
+  }, [applyResultWithEnemyShots, settings.sound]);
 
   const handlePlayerMoveComplete = useCallback(() => {
     const cleave = pendingCleaveThrowRef.current;
@@ -325,28 +368,31 @@ export function useGameState() {
     if (!run || pendingRunRef.current || pendingSniperRunRef.current) return;
 
     const prevKills = run.killsThisRound;
-    const next = playChips(run);
-    const segments = next.playerMoveSteps ?? [];
+    const { state: afterPlay, extraDraw } = executeChipPlay(run);
+    if (afterPlay === run) return;
+
+    pendingExtraDrawRef.current = extraDraw;
+    const segments = afterPlay.playerMoveSteps ?? [];
     const cleaveThrow = getCleaveThrowTarget(
       run,
-      next,
+      afterPlay,
       run.playerPosition,
       segments,
     );
     const killTriggers = getKillTriggersForMove(
       run,
-      next,
+      afterPlay,
       run.playerPosition,
       segments,
     );
-    const novaTargetCells = getNovaTargetCells(run, next);
-    const novaKillCells = getNovaKillCells(run, next);
+    const novaTargetCells = getNovaTargetCells(run, afterPlay);
+    const novaKillCells = getNovaKillCells(run, afterPlay);
 
     if (settings.animations && novaTargetCells.length > 0) {
-      pendingRunRef.current = next;
+      pendingRunRef.current = afterPlay;
       pendingSfxRef.current = {
         prevKills,
-        nextKills: next.killsThisRound,
+        nextKills: afterPlay.killsThisRound,
         killSfxPlayed: false,
       };
       pendingAfterNovaRef.current = {
@@ -365,10 +411,10 @@ export function useGameState() {
     }
 
     if (settings.animations && segments.length > 0) {
-      pendingRunRef.current = next;
+      pendingRunRef.current = afterPlay;
       pendingSfxRef.current = {
         prevKills,
-        nextKills: next.killsThisRound,
+        nextKills: afterPlay.killsThisRound,
         killSfxPlayed: false,
       };
       pendingCleaveThrowRef.current = cleaveThrow;
@@ -382,10 +428,10 @@ export function useGameState() {
     }
 
     if (settings.animations && segments.length === 0 && cleaveThrow) {
-      pendingRunRef.current = next;
+      pendingRunRef.current = afterPlay;
       pendingSfxRef.current = {
         prevKills,
-        nextKills: next.killsThisRound,
+        nextKills: afterPlay.killsThisRound,
         killSfxPlayed: false,
       };
       cleaveAnimTokenRef.current += 1;
@@ -398,19 +444,50 @@ export function useGameState() {
     }
 
     if (settings.sound) {
-      if (next.killsThisRound > prevKills) {
+      if (afterPlay.killsThisRound > prevKills) {
         chiptune.playSfx('kill');
       } else {
         chiptune.playSfx('chip');
       }
     }
+
+    if (afterPlay.enemies.length === 0) {
+      setRun({ ...afterPlay, playerMoveSteps: [] });
+      return;
+    }
+
+    applyResultWithEnemyShots(finalizePlayerAction(afterPlay, extraDraw), afterPlay);
+  }, [applyResultWithEnemyShots, run, settings.animations, settings.sound]);
+
+  const commitPendingEndTurn = useCallback(() => {
+    const next = pendingEndTurnRef.current;
+    if (!next) return;
+    pendingEndTurnRef.current = null;
+    setEnemyShotAnim(null);
     setRun({ ...next, playerMoveSteps: [] });
-  }, [run, settings.animations, settings.sound]);
+  }, []);
 
   const handleEndTurn = useCallback(() => {
-    if (pendingRunRef.current || pendingSniperRunRef.current) return;
-    setRun((r) => (r ? endTurn(r) : r));
-  }, []);
+    if (
+      pendingRunRef.current ||
+      pendingSniperRunRef.current ||
+      pendingEndTurnRef.current ||
+      enemyShotAnim !== null
+    ) {
+      return;
+    }
+    if (!run) return;
+
+    const result = endTurn(run);
+
+    applyResultWithEnemyShots(result);
+  }, [applyResultWithEnemyShots, enemyShotAnim, run]);
+
+  const handleEnemyShotImpact = useCallback(() => {
+    if (settings.sound) {
+      chiptune.playSfx('chip');
+    }
+  }, [settings.sound]);
 
   const handleDiscard = useCallback(() => {
     if (pendingRunRef.current || pendingSniperRunRef.current) return;
@@ -548,7 +625,8 @@ export function useGameState() {
     playerMoveAnim !== null ||
     sniperShotAnim !== null ||
     cleaveThrowAnim !== null ||
-    novaBlastAnim !== null;
+    novaBlastAnim !== null ||
+    enemyShotAnim !== null;
 
   const devTools = useDevToolsApi({
     enabled: DEV_TOOLS_ENABLED,
@@ -609,6 +687,9 @@ export function useGameState() {
     novaBlastAnim,
     commitPendingNova,
     handleNovaImpact,
+    enemyShotAnim,
+    commitPendingEndTurn,
+    handleEnemyShotImpact,
     isBoardAnimating,
     selectedChipSum,
     hasTeleportSelected,

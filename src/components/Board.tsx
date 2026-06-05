@@ -13,6 +13,10 @@ import {
   useNovaBlastAnimation,
   type NovaBlastRequest,
 } from '../hooks/useNovaBlastAnimation';
+import {
+  useEnemyShotAnimation,
+  type EnemyShotRequest,
+} from '../hooks/useEnemyShotAnimation';
 import { RUINS_BACKGROUNDS, RUINS_BOARD } from '../utils/ruinsAssets';
 import { BoardCell } from './BoardCell';
 import { BoardProjectile } from './BoardProjectile';
@@ -37,6 +41,9 @@ interface BoardProps {
   novaBlastRequest: NovaBlastRequest | null;
   onNovaBlastComplete: () => void;
   onNovaImpact?: () => void;
+  enemyShotRequest: EnemyShotRequest | null;
+  onEnemyShotComplete: () => void;
+  onEnemyShotImpact?: () => void;
 }
 
 export function Board({
@@ -54,6 +61,9 @@ export function Board({
   novaBlastRequest,
   onNovaBlastComplete,
   onNovaImpact,
+  enemyShotRequest,
+  onEnemyShotComplete,
+  onEnemyShotImpact,
 }: BoardProps) {
   const cellPositions = useMemo(() => {
     const cells: { index: number; x: number; y: number }[] = [];
@@ -116,6 +126,16 @@ export function Board({
     onNovaBlastComplete,
     onNovaImpact,
   );
+
+  const { phase: enemyShotPhase } = useEnemyShotAnimation(
+    enemyShotRequest,
+    animations,
+    onEnemyShotComplete,
+    onEnemyShotImpact,
+  );
+
+  const playerHitByProjectile =
+    enemyShotPhase === 'impact' && enemyShotRequest !== null;
 
   const defeatedEnemyCellSet = useMemo(() => {
     const set = new Set(defeatedEnemyCells);
@@ -210,6 +230,12 @@ export function Board({
     ? cellPositions.find((c) => c.index === novaBlastRequest.fromCell)
     : null;
 
+  const enemyShotTargetCell =
+    enemyShotRequest?.shots[0]?.toCell ?? run.playerPosition;
+  const enemyShotTargetPos = cellPositions.find(
+    (c) => c.index === enemyShotTargetCell,
+  );
+
   return (
     <div
       className="board-frame relative mr-auto overflow-visible"
@@ -254,7 +280,10 @@ export function Board({
           const enemies = cellEnemies.filter(
             (e) => !defeatedEnemyCellSet.has(e.position),
           );
-          const isPlayerHere = !showAnimatedPlayer && run.playerPosition === index;
+          const isPlayerHere =
+            !showAnimatedPlayer && run.playerPosition === index;
+          const playerProjectileHit =
+            playerHitByProjectile && index === enemyShotTargetCell;
           const enemyDying =
             splatterSet.has(index) ||
             (sniperPhase === 'impact' && sniperSplatterCell === index) ||
@@ -276,6 +305,7 @@ export function Board({
                 enemies={enemies}
                 animations={animations}
                 killFlash={run.lastKillFlash && isPlayerHere}
+                projectileHitFlash={playerProjectileHit}
                 showSplatter={splatterSet.has(index)}
                 enemyDying={enemyDying}
                 upgradeIds={run.upgradeIds}
@@ -310,6 +340,29 @@ export function Board({
           active={cleavePhase === 'flight'}
         />
       )}
+
+      {enemyShotRequest &&
+        enemyShotPhase === 'flight' &&
+        enemyShotTargetPos &&
+        enemyShotRequest.shots.map((shot, i) => {
+          const fromPos = cellPositions.find((c) => c.index === shot.fromCell);
+          const toPos =
+            cellPositions.find((c) => c.index === shot.toCell) ??
+            enemyShotTargetPos;
+          if (!fromPos || !toPos) return null;
+          return (
+            <BoardProjectile
+              key={`enemy-shot-${shot.fromCell}-${shot.toCell}-${i}`}
+              kind="enemy-arrow"
+              fromX={fromPos.x}
+              fromY={fromPos.y}
+              toX={toPos.x}
+              toY={toPos.y}
+              boardCoordSize={BOARD_COORD_SIZE}
+              active
+            />
+          );
+        })}
 
       {novaFrom &&
         novaBlastRequest &&
@@ -365,9 +418,14 @@ export function Board({
             <div
               className={`flex items-center justify-center ${playerMotionClass} ${
                 playerVisible ? '' : 'invisible opacity-0'
-              }`}
+              } ${playerHitByProjectile ? 'animate-player-strike' : ''}`}
             >
-              <EntitySprite kind="player" size="xl" animate={false} />
+              <EntitySprite
+                kind="player"
+                size="xl"
+                animate={false}
+                flash={playerHitByProjectile}
+              />
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { cellsAlongPath, getNearestEnemyTargetCell } from './gameLogic';
 import type { PlayerMoveSegment } from './playerMovement';
+import { canEnemyTakeDamage } from './enemyTraits';
 import { hasUpgrade } from './upgrades';
 import type { RunState } from './types';
 
@@ -100,6 +101,7 @@ export function getNovaKillCells(before: RunState, after: RunState): number[] {
 
   const positions: number[] = [];
   for (const enemy of before.enemies) {
+    if (!canEnemyTakeDamage(enemy.type, 'magic')) continue;
     let hp = enemy.hp;
     if (enemy.type === 'tank' && hasUpgrade(before.upgradeIds, 'tank_bane')) {
       hp = 1;

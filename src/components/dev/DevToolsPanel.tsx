@@ -207,6 +207,9 @@ export function DevToolsPanel({
             <Btn label="+ Tank" disabled={!run} onClick={() => api.spawnEnemy('tank')} />
             <Btn label="+ Elite" disabled={!run} onClick={() => api.spawnEnemy('elite')} />
             <Btn label="+ Boss" disabled={!run} onClick={() => api.spawnEnemy('boss')} />
+            <Btn label="+ Leerwächter" disabled={!run} onClick={() => api.spawnEnemy('nullward')} />
+            <Btn label="+ Schildträger" disabled={!run} onClick={() => api.spawnEnemy('bulwark')} />
+            <Btn label="+ Schütze" disabled={!run} onClick={() => api.spawnEnemy('marksman')} />
           </div>
         </Section>
 
